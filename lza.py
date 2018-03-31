@@ -176,9 +176,9 @@ def main():
 
 				c = node.get_value("C")
 				if not c:
-					node.set_value("C", "{0:.2f}%\n{1}".format(wr, line))
+					node.set_value("C", "{0:.2f}%".format(wr))
 				else:
-					node.set_value("C", "{0:.2f}%\n{1}\n{2}".format(wr, line, c))
+					node.set_value("C", "{0:.2f}%\n{1}".format(wr, c))
 			except:
 				pass
 
