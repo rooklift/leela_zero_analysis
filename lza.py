@@ -6,9 +6,12 @@ leela_zero = "C:\\Programs (self-installed)\\Leela Zero\\leelaz.exe"
 network_dir = "C:\\Programs (self-installed)\\Leela Zero\\networks"
 
 network = "8fc22bca11d3e913eb09989719adb8ae5256af3d157cb8db708f0660d7aafac0"
-visits = 3200
+visits = 1
 
 extras = "--gtp --noponder --resignpct 0 --threads 1"
+
+quiet = True
+debug_comms = True
 
 # -------------
 
@@ -19,7 +22,8 @@ def send(msg):
 
 	if msg.endswith("\n") == False:
 		msg += "\n"
-	# print("--> " + msg)
+	if debug_comms:
+		print("--> " + msg.strip())
 	msg = bytes(msg, encoding = "ascii")
 	process.stdin.write(msg)
 	process.stdin.flush()
@@ -46,38 +50,55 @@ def main():
 
 	cmd = "\"{}\" -v {} {} -w \"{}\"".format(leela_zero, visits, extras, os.path.join(network_dir, network))
 
-	# Might want to add stderr = subprocess.DEVNULL below...
-
-	process = subprocess.Popen(cmd, shell = False, stdin = subprocess.PIPE, stdout = subprocess.PIPE)
+	process = subprocess.Popen(cmd,
+		shell = False,
+		stdin = subprocess.PIPE,
+		stdout = subprocess.PIPE,
+		stderr = subprocess.DEVNULL if quiet else None)
 
 	while 1:
 
-		if node.move_coords():
+		# If node is at end, we have nothing to do...
 
-			child = node.main_child()
-			if not child:
-				break
+		child = node.main_child()
+		if not child:
+			break
+
+		# If there's a move, send it to the engine...
+
+		if node.move_coords():
 
 			colour_foo = node.move_colour()
 
 			if colour_foo == gofish.BLACK:
 				colour = "black"
-				next_colour = "white"
 			elif colour_foo == gofish.WHITE:
 				colour = "white"
-				next_colour = "black"
 			else:
 				colour = "??"
-				next_colour = "??"
 
 			english = gofish.english_string_from_point(*node.move_coords(), node.board.boardsize)
 
 			send("play {} {}".format(colour, english))
 			receive_gtp()
 
+		# If the child has a move, compare it to LZ's choice...
+
+		if child.move_coords():
+
+			last_colour_foo = node.last_colour_played()
+
+			if last_colour_foo in [gofish.WHITE, None]:
+				next_colour = "black"
+			elif last_colour_foo == gofish.BLACK:
+				next_colour = "white"
+			else:
+				next_colour = "??"
+
 			send("genmove {}".format(next_colour))
 			r = receive_gtp()
-			# print("<-- {}".format(r))
+			if debug_comms:
+				print("<-- {}".format(r))
 
 			english = r.split()[1]
 			point = gofish.point_from_english_string(english, node.board.boardsize)
