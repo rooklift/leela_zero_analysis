@@ -6,7 +6,7 @@ leela_zero = "C:\\Programs (self-installed)\\Leela Zero\\leelaz.exe"
 network_dir = "C:\\Programs (self-installed)\\Leela Zero\\networks"
 
 network = "8fc22bca11d3e913eb09989719adb8ae5256af3d157cb8db708f0660d7aafac0"
-visits = 250
+visits = 3200
 
 extras = "--gtp --noponder --resignpct 0 --threads 1"
 
@@ -144,7 +144,7 @@ def main():
 				if c == None:
 					child.set_value("C", "LZ prefers {}".format(english))
 				else:
-					child.set_value("C", "{}\nLZ prefers {}".format(c, english))
+					child.set_value("C", "LZ prefers {}\n{}".format(english, c))
 
 			if sgf_point:
 				child.set_value("TR", sgf_point)
@@ -173,7 +173,7 @@ def main():
 					if c == None:
 						node.set_value("C", "{0:.2f}%".format(wr))
 					else:
-						node.set_value("C", "{0}\n{1:.2f}%".format(c, wr))
+						node.set_value("C", "{0:.2f}%\n{1}".format(wr, c))
 				except:
 					pass
 
