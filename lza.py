@@ -41,6 +41,7 @@ def receive_gtp():
 
 def stderr_watcher():
 	global process
+	global stderr_lines_queue
 
 	while 1:
 		z = process.stderr.readline().decode("utf-8")
