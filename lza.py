@@ -45,7 +45,7 @@ def main():
 	node = gofish.load(sys.argv[1])
 
 	cmd = "\"{}\" -v {} {} -w \"{}\"".format(leela_zero, visits, extras, os.path.join(network_dir, network))
-	process = subprocess.Popen(cmd, shell = False, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.DEVNULL)
+	process = subprocess.Popen(cmd, shell = False, stdin = subprocess.PIPE, stdout = subprocess.PIPE)			# or use stderr = subprocess.DEVNULL
 
 	while 1:
 
@@ -56,7 +56,16 @@ def main():
 				break
 
 			colour_foo = node.move_colour()
-			colour, next_colour = ("black", "white") if colour_foo == gofish.BLACK else ("white", "black") if colour_foo == gofish.WHITE else ("??", "??")
+
+			if colour_foo == gofish.BLACK:
+				colour = "black"
+				next_colour = "white"
+			elif colour_foo == gofish.WHITE:
+				colour = "white"
+				next_colour = "black"
+			else:
+				colour = "??"
+				next_colour = "??"
 
 			english = gofish.english_string_from_point(*node.move_coords(), node.board.boardsize)
 
