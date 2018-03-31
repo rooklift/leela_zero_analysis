@@ -161,13 +161,17 @@ def main():
 
 			if line:
 
-				# The winrate of the child move is the inverse of the winrate of the current node's move.
-				# We'll show Black's winrate in the SGF.
+				# We'll show Black's winrate in the current node.
 
 				try:
 					wr = float(re.search(r"\(V: (.+)%\) \(", line).group(1))
 
-					if child.last_colour_played() == gofish.WHITE:	# i.e. the child's move is White, so the winrate it reported is for White
+					# If the colour moving now (i.e. child node's colour) is Black,
+					# then the current Black winrate is simply the winrate of the
+					# best move found. But if the move is White, the current Black
+					# winrate is the "complement".
+
+					if child.last_colour_played() == gofish.WHITE:
 						wr = 100 - wr
 
 					c = node.get_value("C")
