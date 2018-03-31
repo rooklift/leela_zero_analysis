@@ -1,5 +1,7 @@
 import gofish, os, subprocess, sys, time
 
+# TODO: with --noponder, it should be OK to parse the stderr and show lines or win %
+
 # -------------
 
 leela_zero = "C:\\Programs (self-installed)\\Leela Zero\\leelaz.exe"
