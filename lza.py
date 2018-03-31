@@ -148,7 +148,7 @@ def main():
 					child.set_value("C", "LZ prefers {}\n{}".format(english, c))
 
 			if sgf_point:
-				child.set_value("TR", sgf_point)
+				child.add_value("TR", sgf_point)
 
 			if time.monotonic() - save_time > 10:
 				node.save(sys.argv[1] + ".lza.sgf")
