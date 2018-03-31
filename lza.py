@@ -154,7 +154,7 @@ def main():
 				node.save(sys.argv[1] + ".lza.sgf")
 				save_time = time.monotonic()
 
-			# Get the winrate for the best move the child could make.
+			# Get the winrate for the best move the child could have.
 			# That allows us to get the winrate for the current position.
 
 			line = search_queue_for_move_winrate(english)	# We find winrates in stderr
