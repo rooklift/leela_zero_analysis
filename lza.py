@@ -1,6 +1,4 @@
-import gofish, os, subprocess, sys, time
-
-# TODO: with --noponder, it should be OK to parse the stderr and show lines or win %
+import gofish, os, queue, re, subprocess, sys, threading, time
 
 # -------------
 
@@ -8,16 +6,16 @@ leela_zero = "C:\\Programs (self-installed)\\Leela Zero\\leelaz.exe"
 network_dir = "C:\\Programs (self-installed)\\Leela Zero\\networks"
 
 network = "8fc22bca11d3e913eb09989719adb8ae5256af3d157cb8db708f0660d7aafac0"
-visits = 3200
+visits = 250
 
 extras = "--gtp --noponder --resignpct 0 --threads 1"
 
-quiet = True
 debug_comms = True
 
 # -------------
 
 process = None
+stderr_lines_queue = queue.Queue()
 
 def send(msg):
 	global process
@@ -41,6 +39,28 @@ def receive_gtp():
 			return s.strip()
 		s += z
 
+def stderr_watcher():
+	global process
+
+	while 1:
+		z = process.stderr.readline().decode("utf-8")
+		stderr_lines_queue.put(z.strip())
+
+def search_queue_for_move_winrate(english):
+	global stderr_lines_queue
+
+	result = None
+
+	while 1:
+		try:
+			line = stderr_lines_queue.get(block = False)
+			search = "{} ->".format(english)
+			if search in line:
+				result = line
+
+		except queue.Empty:
+			return result
+
 def main():
 	global process
 
@@ -49,6 +69,7 @@ def main():
 		sys.exit()
 
 	node = gofish.load(sys.argv[1])
+	root = node
 
 	cmd = "\"{}\" -v {} {} -w \"{}\"".format(leela_zero, visits, extras, os.path.join(network_dir, network))
 
@@ -56,7 +77,13 @@ def main():
 		shell = False,
 		stdin = subprocess.PIPE,
 		stdout = subprocess.PIPE,
-		stderr = subprocess.DEVNULL if quiet else None)
+		stderr = subprocess.PIPE,
+	)
+
+	# Start a thread to watch stderr and put its output on a queue...
+	# This allows us to search recent stderr messages without blocking.
+
+	threading.Thread(target = stderr_watcher, daemon = True).start()
 
 	save_time = time.monotonic()
 
@@ -112,10 +139,12 @@ def main():
 			else:
 				sgf_point = ""
 
-			if child.move_coords() == point:
-				child.delete_property("C")
-			else:
-				child.set_value("C", "LZ prefers {}".format(english))
+			if child.move_coords() != point:
+				c = child.get_value("C")
+				if c == None:
+					child.set_value("C", "LZ prefers {}".format(english))
+				else:
+					child.set_value("C", "{}\nLZ prefers {}".format(c, english))
 
 			if sgf_point:
 				child.set_value("TR", sgf_point)
@@ -123,6 +152,30 @@ def main():
 			if time.monotonic() - save_time > 10:
 				node.save(sys.argv[1] + ".lza.sgf")
 				save_time = time.monotonic()
+
+			# Get the winrate for the best move the child could make.
+			# That allows us to get the winrate for the current position.
+
+			line = search_queue_for_move_winrate(english)	# We find winrates in stderr
+
+			if line:
+
+				# The winrate of the child move is the inverse of the winrate of the current node's move.
+				# We'll show Black's winrate in the SGF.
+
+				try:
+					wr = float(re.search(r"\(V: (.+)%\) \(", line).group(1))
+
+					if child.last_colour_played() == gofish.WHITE:	# i.e. the child's move is White, so the winrate it reported is for White
+						wr = 100 - wr
+
+					c = node.get_value("C")
+					if c == None:
+						node.set_value("C", "{0:.2f}%".format(wr))
+					else:
+						node.set_value("C", "{0}\n{1:.2f}%".format(c, wr))
+				except:
+					pass
 
 			send("undo")
 			receive_gtp()
