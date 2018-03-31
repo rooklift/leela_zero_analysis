@@ -1,7 +1,5 @@
 import gofish, os, queue, re, subprocess, sys, threading, time
 
-# TODO: PV could go into variation.
-
 # -------------
 
 leela_zero = "C:\\Programs (self-installed)\\Leela Zero\\leelaz.exe"
@@ -49,7 +47,7 @@ def stderr_watcher():
 		z = process.stderr.readline().decode("utf-8")
 		stderr_lines_queue.put(z.strip())
 
-def search_queue_for_move_winrate(english):
+def search_queue_for_pv(english):
 	global stderr_lines_queue
 
 	result = None
@@ -154,10 +152,9 @@ def main():
 			node.save(sys.argv[1] + ".lza.sgf")
 			save_time = time.monotonic()
 
-		# Get the winrate for the best move LZ found.
-		# That allows us to get the winrate for the current position.
+		# Get the PV line for the best move LZ found, from the stderr.
 
-		line = search_queue_for_move_winrate(english)	# We find winrates in stderr
+		line = search_queue_for_pv(english)
 
 		if line:
 
@@ -179,6 +176,22 @@ def main():
 					node.set_value("C", "{0:.2f}%".format(wr))
 				else:
 					node.set_value("C", "{0:.2f}%\n{1}".format(wr, c))
+			except:
+				pass
+
+			# Also, send the PV to variations...
+
+			try:
+				pv = re.search(r"PV: (.*)$", line).group(1)
+				moves_list = pv.strip().split()
+				points_list = [gofish.point_from_english_string(mv, node.board.boardsize) for mv in moves_list]
+
+				if points_list[0] != child.move_coords():
+
+					next_node = node
+
+					for point in points_list:
+						next_node = next_node.try_move(*point)
 			except:
 				pass
 
