@@ -1,5 +1,7 @@
 import gofish, os, queue, re, subprocess, sys, threading, time
 
+# TODO: PV could go into variation.
+
 # -------------
 
 leela_zero = "C:\\Programs (self-installed)\\Leela Zero\\leelaz.exe"
@@ -114,76 +116,74 @@ def main():
 			send("play {} {}".format(colour, english))
 			receive_gtp()
 
-		# If the child has a move, compare it to LZ's choice...
+		# Compare next move (found in child node) to LZ's choice...
 
-		if child.move_coords():
+		last_colour_foo = node.last_colour_played()
 
-			last_colour_foo = node.last_colour_played()
+		if last_colour_foo in [gofish.WHITE, None]:
+			next_colour = "black"
+		elif last_colour_foo == gofish.BLACK:
+			next_colour = "white"
+		else:
+			next_colour = "??"
 
-			if last_colour_foo in [gofish.WHITE, None]:
-				next_colour = "black"
-			elif last_colour_foo == gofish.BLACK:
-				next_colour = "white"
+		send("genmove {}".format(next_colour))	# Note that the undo below expects this to always happen.
+		r = receive_gtp()
+		if debug_comms:
+			print("<-- {}".format(r))
+
+		english = r.split()[1]
+		best_point = gofish.point_from_english_string(english, node.board.boardsize)
+
+		if best_point:
+			sgf_point = gofish.string_from_point(*best_point)
+		else:
+			sgf_point = ""
+
+		if child.move_coords() != best_point:
+			c = child.get_value("C")
+			if c == None:
+				child.set_value("C", "LZ prefers {}".format(english))
 			else:
-				next_colour = "??"
+				child.set_value("C", "LZ prefers {}\n{}".format(english, c))
 
-			send("genmove {}".format(next_colour))
-			r = receive_gtp()
-			if debug_comms:
-				print("<-- {}".format(r))
+		if sgf_point:
+			child.add_value("TR", sgf_point)
 
-			english = r.split()[1]
-			point = gofish.point_from_english_string(english, node.board.boardsize)
+		if time.monotonic() - save_time > 10:
+			node.save(sys.argv[1] + ".lza.sgf")
+			save_time = time.monotonic()
 
-			if point:
-				sgf_point = gofish.string_from_point(*point)
-			else:
-				sgf_point = ""
+		# Get the winrate for the best move LZ found.
+		# That allows us to get the winrate for the current position.
 
-			if child.move_coords() != point:
-				c = child.get_value("C")
-				if c == None:
-					child.set_value("C", "LZ prefers {}".format(english))
+		line = search_queue_for_move_winrate(english)	# We find winrates in stderr
+
+		if line:
+
+			# We'll show Black's winrate in the current node.
+
+			try:
+				wr = float(re.search(r"\(V: (.+)%\) \(", line).group(1))
+
+				# If the colour moving now (from node's position) is Black,
+				# then the current Black winrate is simply the winrate of the
+				# best move found. But if the move is White, the current Black
+				# winrate is the "complement".
+
+				if next_colour == "white":
+					wr = 100 - wr
+
+				c = node.get_value("C")
+				if not c:
+					node.set_value("C", "{0:.2f}%\n{1}".format(wr, line))
 				else:
-					child.set_value("C", "LZ prefers {}\n{}".format(english, c))
+					node.set_value("C", "{0:.2f}%\n{1}\n{2}".format(wr, line, c))
+			except:
+				pass
 
-			if sgf_point:
-				child.add_value("TR", sgf_point)
-
-			if time.monotonic() - save_time > 10:
-				node.save(sys.argv[1] + ".lza.sgf")
-				save_time = time.monotonic()
-
-			# Get the winrate for the best move LZ found.
-			# That allows us to get the winrate for the current position.
-
-			line = search_queue_for_move_winrate(english)	# We find winrates in stderr
-
-			if line:
-
-				# We'll show Black's winrate in the current node.
-
-				try:
-					wr = float(re.search(r"\(V: (.+)%\) \(", line).group(1))
-
-					# If the colour moving now (after node's position) is Black,
-					# then the current Black winrate is simply the winrate of the
-					# best move found. But if the move is White, the current Black
-					# winrate is the "complement".
-
-					if next_colour == "white":
-						wr = 100 - wr
-
-					c = node.get_value("C")
-					if c == None:
-						node.set_value("C", "{0:.2f}%".format(wr))
-					else:
-						node.set_value("C", "{0:.2f}%\n{1}".format(wr, c))
-				except:
-					pass
-
-			send("undo")
-			receive_gtp()
+		send("undo")	# Undo the genmove. Since we always genmove, always undo.
+		receive_gtp()
 
 		next_node = node.main_child()
 
@@ -193,5 +193,7 @@ def main():
 		node = next_node
 
 	node.save(sys.argv[1] + ".lza.sgf")
+
+# -------------
 
 main()
