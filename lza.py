@@ -6,7 +6,7 @@ leela_zero = "C:\\Programs (self-installed)\\Leela Zero\\leelaz.exe"
 network_dir = "C:\\Programs (self-installed)\\Leela Zero\\networks"
 
 network = "8fc22bca11d3e913eb09989719adb8ae5256af3d157cb8db708f0660d7aafac0"
-visits = 1
+visits = 3200
 
 extras = "--gtp --noponder --resignpct 0 --threads 1"
 
@@ -55,6 +55,8 @@ def main():
 		stdin = subprocess.PIPE,
 		stdout = subprocess.PIPE,
 		stderr = subprocess.DEVNULL if quiet else None)
+
+	save_time = time.monotonic()
 
 	while 1:
 
@@ -115,6 +117,10 @@ def main():
 
 			if sgf_point:
 				child.set_value("TR", sgf_point)
+
+			if time.monotonic() - save_time > 10:
+				node.save(sys.argv[1] + ".lza.sgf")
+				save_time = time.monotonic()
 
 			send("undo")
 			receive_gtp()
