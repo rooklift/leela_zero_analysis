@@ -31,7 +31,7 @@ def receive_gtp():
 
 	while 1:
 		z = process.stdout.readline().decode("utf-8")
-		if z.strip() == "":								# Blank line always means end of output (I think)
+		if z.strip() == "":		# Blank line always means end of output (I think)
 			return s.strip()
 		s += z
 
@@ -45,7 +45,10 @@ def main():
 	node = gofish.load(sys.argv[1])
 
 	cmd = "\"{}\" -v {} {} -w \"{}\"".format(leela_zero, visits, extras, os.path.join(network_dir, network))
-	process = subprocess.Popen(cmd, shell = False, stdin = subprocess.PIPE, stdout = subprocess.PIPE)			# or use stderr = subprocess.DEVNULL
+
+	# Might want to add stderr = subprocess.DEVNULL below...
+
+	process = subprocess.Popen(cmd, shell = False, stdin = subprocess.PIPE, stdout = subprocess.PIPE)
 
 	while 1:
 
