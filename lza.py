@@ -154,7 +154,7 @@ def main():
 				node.save(sys.argv[1] + ".lza.sgf")
 				save_time = time.monotonic()
 
-			# Get the winrate for the best move the child could have.
+			# Get the winrate for the best move LZ found.
 			# That allows us to get the winrate for the current position.
 
 			line = search_queue_for_move_winrate(english)	# We find winrates in stderr
@@ -166,12 +166,12 @@ def main():
 				try:
 					wr = float(re.search(r"\(V: (.+)%\) \(", line).group(1))
 
-					# If the colour moving now (i.e. child node's colour) is Black,
+					# If the colour moving now (after node's position) is Black,
 					# then the current Black winrate is simply the winrate of the
 					# best move found. But if the move is White, the current Black
 					# winrate is the "complement".
 
-					if child.last_colour_played() == gofish.WHITE:
+					if next_colour == "white":
 						wr = 100 - wr
 
 					c = node.get_value("C")
