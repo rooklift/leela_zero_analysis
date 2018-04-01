@@ -203,7 +203,7 @@ def main():
 		# The previous Info now has all the info it's getting...
 
 		if i > 1:
-			do_comment(info = all_info[i - 1], parent_info = all_info[i - 2])
+			do_node_markup(info = all_info[i - 1], parent_info = all_info[i - 2])
 			if time.monotonic() - save_time > 10:
 				node.save(sys.argv[1] + ".lza.sgf")
 				save_time = time.monotonic()
@@ -211,7 +211,7 @@ def main():
 	root.save(sys.argv[1] + ".lza.sgf")
 
 
-def do_comment(info, parent_info):
+def do_node_markup(info, parent_info):
 
 	node = info.node
 
