@@ -74,11 +74,12 @@ def search_queue_for_pv(english):
 
 	result = None
 
-	# Check all lines in the queue, also removing them all from the queue
+	# Check all lines in the queue, also removing them all from the queue.
+	# We let this block if we haven't got a result yet.
 
 	while 1:
 		try:
-			line = stderr_lines_queue.get(block = False)
+			line = stderr_lines_queue.get(block = True if result is None else False)
 			search = "{} ->".format(english)
 			if search in line:
 				result = line
@@ -163,10 +164,7 @@ def main():
 
 		# Get PV and score...
 
-		# There's likely some race condition here. It's not exactly guaranteed that the stderr from
-		# the engine has actually reached us yet...
-
-		line = search_queue_for_pv(english_best)
+		line = search_queue_for_pv(english_best)	# Get PV line from stderr
 
 		if line:
 
