@@ -5,7 +5,7 @@ import gofish, os, queue, re, subprocess, sys, threading, time
 leela_zero = "C:\\Programs (self-installed)\\Leela Zero\\leelaz.exe"
 network_dir = "C:\\Programs (self-installed)\\Leela Zero\\networks"
 
-network = "8fc22bca11d3e913eb09989719adb8ae5256af3d157cb8db708f0660d7aafac0"
+network = "2e3863edbb0e18f198e2e76d50529931c17f17f01c7468c992afd9b33f4d5379"
 visits = 3200
 
 extras = "--gtp --noponder --resignpct 0 --threads 1"
@@ -104,14 +104,24 @@ def main():
 
 			if colour_foo == gofish.BLACK:
 				colour = "black"
-			elif colour_foo == gofish.WHITE:
-				colour = "white"
 			else:
-				colour = "??"
+				colour = "white"
 
 			english = gofish.english_string_from_point(*node.move_coords(), node.board.boardsize)
 
 			send("play {} {}".format(colour, english))
+			receive_gtp()
+
+		# Also for handicap / other added stones...
+
+		for stone in node.get_all_values("AB"):
+			english = gofish.english_string_from_string(stone, node.board.boardsize)
+			send("play black {}".format(english))
+			receive_gtp()
+
+		for stone in node.get_all_values("AW"):
+			english = gofish.english_string_from_string(stone, node.board.boardsize)
+			send("play white {}".format(english))
 			receive_gtp()
 
 		# Compare next move (found in child node) to LZ's choice...
@@ -120,10 +130,8 @@ def main():
 
 		if last_colour_foo in [gofish.WHITE, None]:
 			next_colour = "black"
-		elif last_colour_foo == gofish.BLACK:
-			next_colour = "white"
 		else:
-			next_colour = "??"
+			next_colour = "white"
 
 		send("genmove {}".format(next_colour))	# Note that the undo below expects this to always happen.
 		r = receive_gtp()
@@ -147,10 +155,6 @@ def main():
 
 		if sgf_point:
 			child.add_value("TR", sgf_point)
-
-		if time.monotonic() - save_time > 10:
-			node.save(sys.argv[1] + ".lza.sgf")
-			save_time = time.monotonic()
 
 		# Get the PV line for the best move LZ found, from the stderr.
 
@@ -204,6 +208,10 @@ def main():
 			break
 
 		node = next_node
+
+		if time.monotonic() - save_time > 10:
+			node.save(sys.argv[1] + ".lza.sgf")
+			save_time = time.monotonic()
 
 	node.save(sys.argv[1] + ".lza.sgf")
 
