@@ -33,6 +33,7 @@ class Info:
 process = None
 stderr_lines_queue = queue.Queue()
 
+
 def send(msg):
 	global process
 
@@ -43,6 +44,7 @@ def send(msg):
 	msg = bytes(msg, encoding = "ascii")
 	process.stdin.write(msg)
 	process.stdin.flush()
+
 
 def receive_gtp():
 	global process
@@ -57,6 +59,7 @@ def receive_gtp():
 			return s.strip()
 		s += z
 
+
 def stderr_watcher():
 	global process
 	global stderr_lines_queue
@@ -64,6 +67,7 @@ def stderr_watcher():
 	while 1:
 		z = process.stderr.readline().decode("utf-8")
 		stderr_lines_queue.put(z.strip())
+
 
 def search_queue_for_pv(english):
 	global stderr_lines_queue
@@ -79,6 +83,7 @@ def search_queue_for_pv(english):
 
 		except queue.Empty:
 			return result
+
 
 def main():
 	global process
@@ -176,7 +181,14 @@ def main():
 			except:
 				pass
 
-			# TODO: PV
+			# PV...
+
+			try:
+				pv = re.search(r"PV: (.*)$", line).group(1)
+				moves_list = pv.strip().split()
+				info.PV = [gofish.point_from_english_string(mv, node.board.boardsize) for mv in moves_list]
+			except:
+				pass
 
 		# Undo and send actual move...
 
@@ -188,41 +200,52 @@ def main():
 			send("play {} {}".format(colour, english_actual))
 			receive_gtp()
 
-	# Now do the actual comments...
+		# The previous Info now has all the info it's getting...
 
-	for info in all_info:
-		node = info.node
-
-		if node is root and not node.move_coords():
-			continue
-
-		if info.score_after_move is not None:
-			score_string = "{0:.2f}%".format(info.score_after_move)
-		else:
-			score_string = "??"
-
-		if info.score_after_move is not None and info.score_before_move is not None:
-			if info.best_move != info.move:
-				delta_string = "{0:.2f}%".format(info.score_after_move - info.score_before_move)
-			else:
-				delta_string = "( {0:.2f}% )".format(info.score_after_move - info.score_before_move)
-		else:
-			delta_string = "??"
-
-		if info.best_move != info.move and info.best_move:
-			prefer_string = "LZ prefers {}".format(gofish.english_string_from_point(*info.best_move, node.board.boardsize))
-		else:
-			prefer_string = ""
-
-		full_string = "{}\nDelta: {}\n{}".format(score_string, delta_string, prefer_string).strip()
-
-		node.add_to_comment_top(full_string)
-
-		if info.best_move:
-			sgf_point = gofish.string_from_point(*info.best_move)
-			node.add_value("TR", sgf_point)
+		if i > 1:
+			do_comment(info = all_info[i - 1], parent_info = all_info[i - 2])
+			if time.monotonic() - save_time > 10:
+				node.save(sys.argv[1] + ".lza.sgf")
+				save_time = time.monotonic()
 
 	root.save(sys.argv[1] + ".lza.sgf")
+
+
+def do_comment(info, parent_info):
+
+	node = info.node
+
+	if info.score_after_move is not None:
+		score_string = "{0:.2f}%".format(info.score_after_move)
+	else:
+		score_string = "??"
+
+	if info.score_after_move is not None and info.score_before_move is not None:
+		if info.best_move != info.move:
+			delta_string = "{0:.2f}%".format(info.score_after_move - info.score_before_move)
+		else:
+			delta_string = "( {0:.2f}% )".format(info.score_after_move - info.score_before_move)
+	else:
+		delta_string = "??"
+
+	if info.best_move != info.move and info.best_move:
+		prefer_string = "LZ prefers {}".format(gofish.english_string_from_point(*info.best_move, node.board.boardsize))
+	else:
+		prefer_string = ""
+
+	full_string = "{}\nDelta: {}\n{}".format(score_string, delta_string, prefer_string).strip()
+
+	node.add_to_comment_top(full_string)
+
+	if info.best_move:
+		sgf_point = gofish.string_from_point(*info.best_move)
+		node.add_value("TR", sgf_point)
+
+	if info.best_move != info.move:
+		var_node = parent_info.node
+		for point in info.PV:
+			var_node = var_node.try_move(*point)
+
 
 # -------------
 
