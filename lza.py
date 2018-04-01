@@ -237,6 +237,10 @@ def do_comment(info, parent_info):
 
 	node.add_to_comment_top(full_string)
 
+	if info.score_after_move is not None and info.score_before_move is not None:
+		if abs(info.score_after_move - info.score_before_move) > hotspot_threshold:
+			node.set_value("HO", 1)
+
 	if info.best_move:
 		sgf_point = gofish.string_from_point(*info.best_move)
 		node.add_value("TR", sgf_point)
