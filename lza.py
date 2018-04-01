@@ -79,7 +79,7 @@ def search_queue_for_pv(english):
 
 	while 1:
 		try:
-			line = stderr_lines_queue.get(block = True if result is None else False)
+			line = stderr_lines_queue.get(block = True if result == None else False)
 			search = "{} ->".format(english)
 			if search in line:
 				result = line
@@ -215,12 +215,12 @@ def do_node_markup(info, parent_info):
 
 	node = info.node
 
-	if info.score_after_move is not None:
+	if info.score_after_move != None:
 		score_string = "{0:.2f}%".format(info.score_after_move)
 	else:
 		score_string = "??"
 
-	if info.score_after_move is not None and info.score_before_move is not None:
+	if info.score_after_move != None and info.score_before_move != None:
 		if info.best_move != info.move:
 			delta_string = "{0:.2f}%".format(info.score_after_move - info.score_before_move)
 		else:
@@ -237,7 +237,7 @@ def do_node_markup(info, parent_info):
 
 	node.add_to_comment_top(full_string)
 
-	if info.score_after_move is not None and info.score_before_move is not None:
+	if info.score_after_move != None and info.score_before_move != None:
 		if abs(info.score_after_move - info.score_before_move) > hotspot_threshold:
 			node.set_value("HO", 1)
 
