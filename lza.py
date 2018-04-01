@@ -92,8 +92,7 @@ def main():
 		print("Usage: {} <filename>".format(sys.argv[0]))
 		sys.exit()
 
-	node = gofish.load(sys.argv[1])
-	root = node
+	root = gofish.load(sys.argv[1])
 
 	cmd = "\"{}\" -v {} {} -w \"{}\"".format(leela_zero, visits, extras, os.path.join(network_dir, network))
 
@@ -112,6 +111,9 @@ def main():
 	save_time = time.monotonic()
 
 	all_info = []
+	node = root
+
+	# Find all nodes we're going to use and store them in Info objects...
 
 	while 1:
 		all_info.append(Info(node))
@@ -119,22 +121,17 @@ def main():
 		if node == None:
 			break
 
-	node = root
-
-	# Record actual moves...
-
-	for info in all_info:
-		node = info.node
-
-		if node.move_coords():
-			info.move = node.move_coords()
-
-	# Get best moves and PVs...
+	# Go through those objects and update them...
 
 	for i, info in enumerate(all_info):
 		node = info.node
 
-		# Send any AB / AW...
+		# Record actual move...
+
+		if node.move_coords():
+			info.move = node.move_coords()
+
+		# Send any AB / AW to engine...
 
 		for stone in node.get_all_values("AB"):
 			english = gofish.english_string_from_string(stone, node.board.boardsize)
