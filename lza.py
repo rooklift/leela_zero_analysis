@@ -6,7 +6,7 @@ leela_zero = "C:\\Programs (self-installed)\\Leela Zero\\leelaz.exe"
 network_dir = "C:\\Programs (self-installed)\\Leela Zero\\networks"
 
 network = "2e3863edbb0e18f198e2e76d50529931c17f17f01c7468c992afd9b33f4d5379"
-visits = 32
+visits = 3200
 
 extras = "--gtp --noponder --resignpct 0 --threads 1"
 
