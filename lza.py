@@ -24,7 +24,7 @@ class Info:
 		self.node = node
 		self.move = None
 		self.best_move = None
-		self.PV = None
+		self.PV = None					# PV from the position before the move
 		self.score_before_move = None
 		self.score_after_move = None
 
@@ -73,6 +73,8 @@ def search_queue_for_pv(english):
 	global stderr_lines_queue
 
 	result = None
+
+	# Check all lines in the queue, also removing them all from the queue
 
 	while 1:
 		try:
@@ -160,6 +162,9 @@ def main():
 		info.best_move = gofish.point_from_english_string(english_best, node.board.boardsize)
 
 		# Get PV and score...
+
+		# There's likely some race condition here. It's not exactly guaranteed that the stderr from
+		# the engine has actually reached us yet...
 
 		line = search_queue_for_pv(english_best)
 
