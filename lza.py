@@ -10,6 +10,8 @@ visits = 3200
 
 extras = "--gtp --noponder --resignpct 0 --threads 1"
 
+hotspot_threshold = 5
+
 debug_comms = True
 
 # -------------
@@ -87,6 +89,9 @@ def main():
 	threading.Thread(target = stderr_watcher, daemon = True).start()
 
 	save_time = time.monotonic()
+
+	wr_cached = None
+	best_point_cached = None
 
 	while 1:
 
@@ -181,7 +186,23 @@ def main():
 				else:
 					node.set_value("C", "{0:.2f}%\n{1}".format(wr, c))
 			except:
-				pass
+				wr = None
+
+			# Show change in Black winrate since last node...
+
+			if wr is not None and wr_cached is not None:
+				delta = wr - wr_cached
+				if node.move_coords() != best_point_cached:
+					node.add_to_comment_top("Delta: {0:.2f}%".format(delta))
+				else:
+					node.add_to_comment_top("Delta: ( {0:.2f}% )".format(delta))
+				if abs(delta) > hotspot_threshold:
+					node.set_value("HO", 1)
+
+			# Save info to be used next iteration...
+
+			wr_cached = wr
+			best_point_cached = best_point
 
 			# Also, send the PV to variations...
 
