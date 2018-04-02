@@ -22,11 +22,121 @@ class Info:
 
 	def __init__(self, node):
 		self.node = node
-		self.move = None
 		self.best_move = None
-		self.PV = None					# PV from the position before the move
+		self.PV = None					# PV alternative to the actual move, if any
 		self.score_before_move = None
 		self.score_after_move = None
+		self.parent = None				# Info object of previous position
+
+	def colour(self):
+
+		# Either the colour that is playing, or the next colour to play (if no move in node):
+		# Returns a valid GTP colour string.
+
+		if self.node.move_colour():
+			colour = {gofish.BLACK: "black", gofish.WHITE: "white"}[self.node.move_colour()]
+		else:
+			colour = {None: "black", gofish.BLACK: "white", gofish.WHITE: "black"}[self.node.last_colour_played()]
+
+		return colour
+
+	def send_AB_AW(self):
+
+		for stone in self.node.get_all_values("AB"):
+			english = gofish.english_string_from_string(stone, self.node.board.boardsize)
+			send("play black {}".format(english))
+			receive_gtp()
+
+		for stone in self.node.get_all_values("AW"):
+			english = gofish.english_string_from_string(stone, self.node.board.boardsize)
+			send("play white {}".format(english))
+			receive_gtp()
+
+	def analyse(self):
+
+		send("genmove {}".format(self.colour()))	# Note that the undo below expects this to always happen.
+		r = receive_gtp()
+
+		english_best = r.split()[1]
+		self.best_move = gofish.point_from_english_string(english_best, self.node.board.boardsize)
+
+		# Get PV and score...
+
+		line = search_queue_for_pv(english_best)	# Get PV line from stderr
+
+		if line:
+
+			# The score reported by the PV is valid only BEFORE the move
+			# since the actual move in the SGF may be different.
+
+			try:
+				wr = float(re.search(r"\(V: (.+)%\) \(", line).group(1))
+				if self.colour() == "white":
+					wr = 100 - wr
+				self.score_before_move = wr
+				if self.parent:
+					self.parent.score_after_move = wr
+			except:
+				pass
+
+			# PV...
+
+			try:
+				pv = re.search(r"PV: (.*)$", line).group(1)
+				moves_list = pv.strip().split()
+				self.PV = [gofish.point_from_english_string(mv, self.node.board.boardsize) for mv in moves_list]
+			except:
+				pass
+
+		send("undo")
+		receive_gtp()
+
+	def send_move(self):
+
+		if self.node.move_coords():
+			english_actual = gofish.english_string_from_point(*self.node.move_coords(), self.node.board.boardsize)
+			send("play {} {}".format(self.colour(), english_actual))
+			receive_gtp()
+
+	def node_markup(self):
+
+		node = self.node
+
+		if self.score_after_move != None:
+			score_string = "{0:.2f}%".format(self.score_after_move)
+		else:
+			score_string = "??"
+
+		if self.score_after_move != None and self.score_before_move != None:
+			if self.best_move != node.move_coords():
+				delta_string = "{0:.2f}%".format(self.score_after_move - self.score_before_move)
+			else:
+				delta_string = "( {0:.2f}% )".format(self.score_after_move - self.score_before_move)
+		else:
+			delta_string = "??"
+
+		if self.best_move != node.move_coords() and self.best_move:
+			prefer_string = "LZ prefers {}".format(gofish.english_string_from_point(*self.best_move, node.board.boardsize))
+		else:
+			prefer_string = ""
+
+		full_string = "{}\nDelta: {}\n{}".format(score_string, delta_string, prefer_string).strip()
+
+		node.add_to_comment_top(full_string)
+
+		if self.score_after_move != None and self.score_before_move != None:
+			if abs(self.score_after_move - self.score_before_move) > hotspot_threshold:
+				node.set_value("HO", 1)
+
+		if self.best_move:
+			sgf_point = gofish.string_from_point(*self.best_move)
+			node.add_value("TR", sgf_point)
+
+		if self.best_move != node.move_coords():
+			if self.parent:
+				var_node = self.parent.node
+				for point in self.PV:
+					var_node = var_node.try_move(*point)
 
 # -------------
 
@@ -113,145 +223,41 @@ def main():
 
 	save_time = time.monotonic()
 
-	all_info = []
-	node = root
-
 	# Main loop...
+
+	node = root
+	parent_info = None
 
 	while 1:
 
 		info = Info(node)
-		all_info.append(info)
+		info.parent = parent_info
 
-		# Record actual move...
-
-		if node.move_coords():
-			info.move = node.move_coords()
-
-		# Send any AB / AW to engine...
-
-		for stone in node.get_all_values("AB"):
-			english = gofish.english_string_from_string(stone, node.board.boardsize)
-			send("play black {}".format(english))
-			receive_gtp()
-
-		for stone in node.get_all_values("AW"):
-			english = gofish.english_string_from_string(stone, node.board.boardsize)
-			send("play white {}".format(english))
-			receive_gtp()
-
-		# Do genmove before sending the actual move...
-
-		# If there's a move in the node, we can use its colour. If not, we must infer colour
-		# from previous moves. Note that we CANNOT use last_colour_played() if there IS a move.
-
-		if node.move_colour():
-			colour = {gofish.BLACK: "black", gofish.WHITE: "white"}[node.move_colour()]
-		else:
-			colour = {None: "black", gofish.BLACK: "white", gofish.WHITE: "black"}[node.last_colour_played()]
-
-		send("genmove {}".format(colour))	# Note that the undo below expects this to always happen.
-		r = receive_gtp()
-
-		english_best = r.split()[1]
-		info.best_move = gofish.point_from_english_string(english_best, node.board.boardsize)
-
-		# Get PV and score...
-
-		line = search_queue_for_pv(english_best)	# Get PV line from stderr
-
-		if line:
-
-			# The score reported by the PV is valid only BEFORE the move
-			# since the actual move in the SGF may be different.
-
-			try:
-				wr = float(re.search(r"\(V: (.+)%\) \(", line).group(1))
-				if colour == "white":
-					wr = 100 - wr
-				info.score_before_move = wr
-				if len(all_info) > 1:
-					all_info[-2].score_after_move = wr
-			except:
-				pass
-
-			# PV...
-
-			try:
-				pv = re.search(r"PV: (.*)$", line).group(1)
-				moves_list = pv.strip().split()
-				info.PV = [gofish.point_from_english_string(mv, node.board.boardsize) for mv in moves_list]
-			except:
-				pass
-
-		# Undo and send actual move...
-
-		send("undo")
-		receive_gtp()
-
-		if node.move_coords():
-			english_actual = gofish.english_string_from_point(*node.move_coords(), node.board.boardsize)
-			send("play {} {}".format(colour, english_actual))
-			receive_gtp()
+		info.send_AB_AW()
+		info.analyse()
+		info.send_move()
 
 		# The previous Info now has all the info it's getting...
 
-		if len(all_info) > 2:
-			do_node_markup(info = all_info[-2], parent_info = all_info[-3])
-			if time.monotonic() - save_time > 10:
-				node.save(sys.argv[1] + ".lza.sgf")
-				save_time = time.monotonic()
+		if info.parent:
+			if info.parent.node != root or info.parent.node.move_coords():
+				info.parent.node_markup()
+
+		# Save often...
+
+		if time.monotonic() - save_time > 10:
+			node.save(sys.argv[1] + ".lza.sgf")
+			save_time = time.monotonic()
 
 		# Move on to next node...
+
+		parent_info = info
 
 		node = node.main_child()
 		if node == None:
 			break
 
 	root.save(sys.argv[1] + ".lza.sgf")
-
-
-def do_node_markup(info, parent_info):
-
-	# We need the parent (i.e. previous) info as an arg to insert variations into it.
-
-	node = info.node
-
-	if info.score_after_move != None:
-		score_string = "{0:.2f}%".format(info.score_after_move)
-	else:
-		score_string = "??"
-
-	if info.score_after_move != None and info.score_before_move != None:
-		if info.best_move != info.move:
-			delta_string = "{0:.2f}%".format(info.score_after_move - info.score_before_move)
-		else:
-			delta_string = "( {0:.2f}% )".format(info.score_after_move - info.score_before_move)
-	else:
-		delta_string = "??"
-
-	if info.best_move != info.move and info.best_move:
-		prefer_string = "LZ prefers {}".format(gofish.english_string_from_point(*info.best_move, node.board.boardsize))
-	else:
-		prefer_string = ""
-
-	full_string = "{}\nDelta: {}\n{}".format(score_string, delta_string, prefer_string).strip()
-
-	node.add_to_comment_top(full_string)
-
-	if info.score_after_move != None and info.score_before_move != None:
-		if abs(info.score_after_move - info.score_before_move) > hotspot_threshold:
-			node.set_value("HO", 1)
-
-	if info.best_move:
-		sgf_point = gofish.string_from_point(*info.best_move)
-		node.add_value("TR", sgf_point)
-
-	if info.best_move != info.move:
-		var_node = parent_info.node
-		for point in info.PV:
-			var_node = var_node.try_move(*point)
-
 
 # -------------
 
