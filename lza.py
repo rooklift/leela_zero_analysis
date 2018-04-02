@@ -207,7 +207,8 @@ def main():
 
 	scriptpath = os.path.realpath(__file__)
 	configfile = os.path.join(os.path.dirname(scriptpath), "config.json")
-	config = json.load(open(configfile))
+	with open(configfile) as cfg:
+		config = json.load(cfg)
 
 	# Start the engine...
 
