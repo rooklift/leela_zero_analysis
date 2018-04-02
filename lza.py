@@ -273,6 +273,14 @@ def main():
 		if node == None:
 			break
 
+	# The final node needs its score_after_move before it can be marked up...
+
+	colour = "white" if info.colour() == "black" else "black"
+	_, info.score_after_move, _ = analyse(colour, info.node.board.boardsize)
+	info.node_markup()
+
+	# Final save...
+
 	root.save(sys.argv[1] + ".lza.sgf")
 
 # -------------
