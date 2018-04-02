@@ -1,10 +1,6 @@
 import gofish, json, os, queue, re, subprocess, sys, threading, time
 
-# -------------
-
 extras = "--gtp --noponder --resignpct 0 --threads 1"
-hotspot_threshold = 5
-debug_comms = True
 
 # -------------
 
@@ -95,6 +91,7 @@ class Info:
 			receive_gtp()
 
 	def node_markup(self):
+		global config
 
 		node = self.node
 
@@ -121,7 +118,7 @@ class Info:
 		node.add_to_comment_top(full_string)
 
 		if self.score_after_move != None and self.score_before_move != None:
-			if abs(self.score_after_move - self.score_before_move) > hotspot_threshold:
+			if abs(self.score_after_move - self.score_before_move) > config["hotspot_threshold"]:
 				node.set_value("HO", 1)
 
 		if self.best_move:
@@ -138,14 +135,16 @@ class Info:
 
 process = None
 stderr_lines_queue = queue.Queue()
+config = None
 
 
 def send(msg):
 	global process
+	global config
 
 	if msg.endswith("\n") == False:
 		msg += "\n"
-	if debug_comms:
+	if config["debug_comms"]:
 		print("--> " + msg.strip())
 	msg = bytes(msg, encoding = "ascii")
 	process.stdin.write(msg)
@@ -154,13 +153,14 @@ def send(msg):
 
 def receive_gtp():
 	global process
+	global config
 
 	s = ""
 
 	while 1:
 		z = process.stdout.readline().decode("utf-8")
 		if z.strip() == "":		# Blank line always means end of output (I think)
-			if debug_comms:
+			if config["debug_comms"]:
 				print("<-- " + s.strip())
 			return s.strip()
 		s += z
@@ -196,6 +196,7 @@ def search_queue_for_pv(english):
 
 def main():
 	global process
+	global config
 
 	if len(sys.argv) == 1:
 		print("Usage: {} <filename>".format(sys.argv[0]))
