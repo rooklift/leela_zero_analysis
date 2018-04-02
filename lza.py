@@ -1,17 +1,9 @@
-import gofish, os, queue, re, subprocess, sys, threading, time
+import gofish, json, os, queue, re, subprocess, sys, threading, time
 
 # -------------
 
-leela_zero = "C:\\Programs (self-installed)\\Leela Zero\\leelaz.exe"
-network_dir = "C:\\Programs (self-installed)\\Leela Zero\\networks"
-
-network = "2e3863edbb0e18f198e2e76d50529931c17f17f01c7468c992afd9b33f4d5379"
-visits = 3200
-
 extras = "--gtp --noponder --resignpct 0 --threads 1"
-
 hotspot_threshold = 5
-
 debug_comms = True
 
 # -------------
@@ -211,7 +203,15 @@ def main():
 
 	root = gofish.load(sys.argv[1])
 
-	cmd = "\"{}\" -v {} {} -w \"{}\"".format(leela_zero, visits, extras, os.path.join(network_dir, network))
+	# Find and load the config file...
+
+	scriptpath = os.path.realpath(__file__)
+	configfile = os.path.join(os.path.dirname(scriptpath), "config.json")
+	config = json.load(open(configfile))
+
+	# Start the engine...
+
+	cmd = "\"{}\" -v {} {} -w \"{}\"".format(config["engine"], config["visits"], extras, os.path.join(config["network_dir"], config["network"]))
 
 	process = subprocess.Popen(cmd,
 		shell = False,
