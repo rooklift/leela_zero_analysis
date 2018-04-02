@@ -116,18 +116,12 @@ def main():
 	all_info = []
 	node = root
 
-	# Find all nodes we're going to use and store them in Info objects...
+	# Main loop...
 
 	while 1:
-		all_info.append(Info(node))
-		node = node.main_child()
-		if node == None:
-			break
 
-	# Go through those objects and update them...
-
-	for i, info in enumerate(all_info):
-		node = info.node
+		info = Info(node)
+		all_info.append(info)
 
 		# Record actual move...
 
@@ -176,8 +170,8 @@ def main():
 				if colour == "white":
 					wr = 100 - wr
 				info.score_before_move = wr
-				if i > 0:
-					all_info[i - 1].score_after_move = wr
+				if len(all_info) > 1:
+					all_info[-2].score_after_move = wr
 			except:
 				pass
 
@@ -202,16 +196,24 @@ def main():
 
 		# The previous Info now has all the info it's getting...
 
-		if i > 1:
-			do_node_markup(info = all_info[i - 1], parent_info = all_info[i - 2])
+		if len(all_info) > 2:
+			do_node_markup(info = all_info[-2], parent_info = all_info[-3])
 			if time.monotonic() - save_time > 10:
 				node.save(sys.argv[1] + ".lza.sgf")
 				save_time = time.monotonic()
+
+		# Move on to next node...
+
+		node = node.main_child()
+		if node == None:
+			break
 
 	root.save(sys.argv[1] + ".lza.sgf")
 
 
 def do_node_markup(info, parent_info):
+
+	# We need the parent (i.e. previous) info as an arg to insert variations into it.
 
 	node = info.node
 
