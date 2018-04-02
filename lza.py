@@ -40,49 +40,6 @@ class Info:
 			send("play white {}".format(english))
 			receive_gtp()
 
-	def analyse(self):
-
-		# We expect that the node's move has NOT been sent to the engine.
-		# We are thus getting the value of the position without that move.
-		# And possibly finding a different PV.
-
-		send("genmove {}".format(self.colour()))	# Note that the undo below expects this to always happen.
-		r = receive_gtp()
-
-		english_best = r.split()[1]
-		self.best_move = gofish.point_from_english_string(english_best, self.node.board.boardsize)
-
-		# Get PV and score...
-
-		line = search_queue_for_pv(english_best)	# Get PV line from stderr
-
-		if line:
-
-			# The score reported by the PV is valid only BEFORE the move
-			# since the actual move in the SGF may be different.
-
-			try:
-				wr = float(re.search(r"\(V: (.+)%\) \(", line).group(1))
-				if self.colour() == "white":
-					wr = 100 - wr
-				self.score_before_move = wr
-				if self.parent:
-					self.parent.score_after_move = wr
-			except:
-				pass
-
-			# PV...
-
-			try:
-				pv = re.search(r"PV: (.*)$", line).group(1)
-				moves_list = pv.strip().split()
-				self.PV = [gofish.point_from_english_string(mv, self.node.board.boardsize) for mv in moves_list]
-			except:
-				pass
-
-		send("undo")
-		receive_gtp()
-
 	def send_move(self):
 
 		if self.node.move_coords():
@@ -196,6 +153,45 @@ def search_queue_for_pv(english):
 			return result
 
 
+def analyse(colour_string, boardsize):
+
+	send("genmove {}".format(colour_string))
+	r = receive_gtp()
+
+	english_best = r.split()[1]
+	best_move = gofish.point_from_english_string(english_best, boardsize)	# Can be None
+
+	wr = None
+	pv = []
+
+	line = search_queue_for_pv(english_best)	# Get relevant line from stderr
+
+	if line:
+
+		# Get winrate from line...
+
+		try:
+			wr = float(re.search(r"\(V: (.+)%\) \(", line).group(1))
+			if colour_string == "white":
+				wr = 100 - wr
+		except:
+			pass
+
+		# Get PV from line...
+
+		try:
+			pv_string = re.search(r"PV: (.*)$", line).group(1)
+			moves_list = pv_string.strip().split()
+			pv = [gofish.point_from_english_string(mv, boardsize) for mv in moves_list]
+		except:
+			pass
+
+	send("undo")
+	receive_gtp()
+
+	return (best_move, wr, pv)
+
+
 def main():
 	global process
 	global config
@@ -241,13 +237,15 @@ def main():
 		info = Info(node)
 		info.parent = parent_info
 
-		info.send_AB_AW()
-		info.analyse()
-		info.send_move()
+		# Fundamental things...
 
-		if config["showboard"]:
-			info.node.board.dump(highlight = info.node.move_coords())
-			print()
+		info.send_AB_AW()
+
+		info.best_move, info.score_before_move, info.PV = analyse(info.colour(), info.node.board.boardsize)
+		if info.parent:
+			info.parent.score_after_move = info.score_before_move
+
+		info.send_move()
 
 		# The previous Info now has all the info it's getting...
 
@@ -260,6 +258,12 @@ def main():
 		if time.monotonic() - save_time > 10:
 			node.save(sys.argv[1] + ".lza.sgf")
 			save_time = time.monotonic()
+
+		# Display...
+
+		if config["showboard"]:
+			info.node.board.dump(highlight = info.node.move_coords())
+			print()
 
 		# Move on to next node...
 
