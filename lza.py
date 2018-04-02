@@ -181,16 +181,16 @@ def search_queue_for_pv(english):
 	result = None
 
 	# Check all lines in the queue, also removing them all from the queue.
-	# We let this block if we haven't got a result yet.
+	# We use the string "playout" as a marker for when stderr output ends.
+	# This is highly fragile to future changes in LZ. It must be some string
+	# that appears ONCE near the end of the output.
 
 	while 1:
-		try:
-			line = stderr_lines_queue.get(block = True if result == None else False)
-			search = "{} ->".format(english)
-			if search in line:
-				result = line
-
-		except queue.Empty:
+		line = stderr_lines_queue.get(block = True)
+		search = "{} ->".format(english)
+		if search in line:
+			result = line
+		if "playout" in line:		# See above.
 			return result
 
 
