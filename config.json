@@ -3,6 +3,7 @@
 	"network_dir": "C:\\Programs (self-installed)\\Leela Zero\\networks",
 	"network": "2e3863edbb0e18f198e2e76d50529931c17f17f01c7468c992afd9b33f4d5379",
 	"hotspot_threshold": 5,
-	"debug_comms": true,
+	"debug_comms": false,
+	"showboard": true,
 	"visits": 3200
 }

@@ -243,6 +243,10 @@ def main():
 		info.analyse()
 		info.send_move()
 
+		if config["showboard"]:
+			info.node.board.dump(highlight = info.node.move_coords())
+			print()
+
 		# The previous Info now has all the info it's getting...
 
 		if info.parent:
