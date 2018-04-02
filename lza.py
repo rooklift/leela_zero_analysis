@@ -183,7 +183,9 @@ def search_queue_for_pv(english):
 	# Check all lines in the queue, also removing them all from the queue.
 	# We use the string "playout" as a marker for when stderr output ends.
 	# This is highly fragile to future changes in LZ. It must be some string
-	# that appears ONCE near the end of the output.
+	# that appears ONCE near the end of the output. One can't simply use
+	# the search string (e.g. "C16 ->") because there will be some more
+	# output after that, which might be mistaken for the PV next iteration.
 
 	while 1:
 		line = stderr_lines_queue.get(block = True)
