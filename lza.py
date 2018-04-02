@@ -54,6 +54,10 @@ class Info:
 
 	def analyse(self):
 
+		# We expect that the node's move has NOT been sent to the engine.
+		# We are thus getting the value of the position without that move.
+		# And possibly finding a different PV.
+
 		send("genmove {}".format(self.colour()))	# Note that the undo below expects this to always happen.
 		r = receive_gtp()
 
