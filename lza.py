@@ -84,9 +84,18 @@ class Info:
 
 		if self.best_move != node.move_coords():
 			if self.parent:
+
+				first_colour = {"black": gofish.BLACK, "white": gofish.WHITE}[self.colour()]
+				made_first = False
+
 				var_node = self.parent.node
+
 				for point in self.PV:
-					var_node = var_node.try_move(*point)
+					if made_first:
+						var_node = var_node.try_move(*point)
+					else:
+						var_node = var_node.try_move(*point, colour = first_colour)
+						made_first = True
 
 # -------------
 
