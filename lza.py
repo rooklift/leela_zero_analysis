@@ -10,23 +10,12 @@ class Info:
 
 	def __init__(self, node):
 		self.node = node
+		self.colour = None
 		self.best_move = None
 		self.PV = None					# PV alternative to the actual move, if any
 		self.score_before_move = None
 		self.score_after_move = None
 		self.parent = None				# Info object of previous position
-
-	def colour(self):
-
-		# Either the colour that is playing, or the next colour to play (if no move in node):
-		# Returns a valid GTP colour string.
-
-		if self.node.move_colour():
-			colour = {gofish.BLACK: "black", gofish.WHITE: "white"}[self.node.move_colour()]
-		else:
-			colour = {None: "black", gofish.BLACK: "white", gofish.WHITE: "black"}[self.node.last_colour_played()]
-
-		return colour
 
 	def send_AB_AW(self):
 
@@ -44,7 +33,7 @@ class Info:
 
 		if self.node.move_coords():
 			english_actual = gofish.english_string_from_point(*self.node.move_coords(), self.node.board.boardsize)
-			send("play {} {}".format(self.colour(), english_actual))
+			send("play {} {}".format(self.colour, english_actual))
 			receive_gtp()
 
 	def node_markup(self):
@@ -83,9 +72,10 @@ class Info:
 			node.add_value("TR", sgf_point)
 
 		if self.best_move != node.move_coords():
-			if self.parent:
 
-				first_colour = {"black": gofish.BLACK, "white": gofish.WHITE}[self.colour()]
+			if self.parent and self.PV:
+
+				first_colour = {"black": gofish.BLACK, "white": gofish.WHITE}[self.colour]
 				made_first = False
 
 				var_node = self.parent.node
@@ -236,36 +226,58 @@ def main():
 
 	save_time = time.monotonic()
 
-	# Main loop...
+	# Make a list of Info objects...
 
+	all_info = []
 	node = root
-	parent_info = None
 
 	while 1:
 
-		info = Info(node)
-		info.parent = parent_info
+		# Totally ignore empty nodes. Everything else gets put in the list...
 
-		# Fundamental things...
+		if "B" in node.properties or "W" in node.properties or "AB" in node.properties or "AW" in node.properties:
+
+			new_info = Info(node)
+
+			if len(all_info) > 0:
+				new_info.parent = all_info[-1]		# Might not correspond to the node's actual parent node (due to empty nodes)
+
+			if node.move_colour():
+				new_info.colour = {gofish.BLACK: "black", gofish.WHITE: "white"}[node.move_colour()]
+
+			all_info.append(new_info)
+
+		node = node.main_child()
+		if node == None:
+			break
+
+	# Main loop...
+
+	for info in all_info:
+
+		# Send any handicap stones etc...
 
 		info.send_AB_AW()
 
-		info.best_move, info.score_before_move, info.PV = analyse(info.colour(), info.node.board.boardsize)
-		if info.parent:
-			info.parent.score_after_move = info.score_before_move
+		# At this moment, the engine's idea of the board matches this node BEFORE the node's move.
+		# We can thus get the score_before_move...
+
+		if info.colour:
+			info.best_move, info.score_before_move, info.PV = analyse(info.colour, info.node.board.boardsize)
+			if info.parent:
+				info.parent.score_after_move = info.score_before_move
 
 		info.send_move()
 
 		# The previous Info now has all the info it's getting...
 
 		if info.parent:
-			if info.parent.node != root or info.parent.node.move_coords():
-				info.parent.node_markup()
+			info.parent.node_markup()
 
 		# Save often...
 
 		if time.monotonic() - save_time > 10:
-			node.save(sys.argv[1] + ".lza.sgf")
+			root.save(sys.argv[1] + ".lza.sgf")
 			save_time = time.monotonic()
 
 		# Display...
@@ -274,17 +286,9 @@ def main():
 			info.node.board.dump(highlight = info.node.move_coords())
 			print()
 
-		# Move on to next node...
-
-		parent_info = info
-
-		node = node.main_child()
-		if node == None:
-			break
-
 	# The final node needs its score_after_move before it can be marked up...
 
-	colour = "white" if info.colour() == "black" else "black"
+	colour = "white" if info.colour == "black" else "black"
 	_, info.score_after_move, _ = analyse(colour, info.node.board.boardsize)
 	info.node_markup()
 
