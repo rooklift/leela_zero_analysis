@@ -55,10 +55,13 @@ class Hub:
 				else:
 					return s			# Blank line always means end of output (I think).
 
-	def analyze(self):
+	def analyze(self, colour_char):
+
+		# colour_char is "b" or "w".
+		# We return the last info line sent by LZ.
 
 		out_id = self._next_qid()
-		msg = "{} {}".format(out_id, "lz-analyze 50")
+		msg = "{} lz-analyze {} interval 50".format(out_id, colour_char)
 
 		self._send(msg)
 
@@ -73,6 +76,7 @@ class Hub:
 				if "info" in z:
 					s = z
 
+		# For synchronization purposes...
 		self.send_and_receive("name")
 
 		return s.strip()
@@ -84,7 +88,7 @@ class Info:
 
 	def __init__(self, node):
 		self.node = node				# gofish node
-		self.colour = None
+		self.colour = None				# "b" or "w"
 		self.best_move = None
 		self.PV = None					# PV alternative to the actual move, if any
 		self.score_before_move = None
@@ -161,7 +165,10 @@ class Info:
 
 	def analyze(self, hub):
 
-		s = hub.analyze()
+		if self.colour not in ["b", "w"]:
+			raise ValueError
+
+		s = hub.analyze(self.colour)
 
 		'''
 		info move D16 visits 41 winrate 4342 prior 1647 lcb 4291 order 0 pv D16 Q4 Q16 D4 R6 R14 C6 C14 F3 F4 info move D4 visits
@@ -189,7 +196,13 @@ class Info:
 				i = fields.index("move")
 				self.best_move = gofish.point_from_english_string(fields[i + 1], self.node.board.boardsize)
 			except:
-				continue
+				pass
+
+			try:
+				i = fields.index("winrate")
+				wr = int(fields[i + 1]) / 100
+			except:
+				pass
 
 			break
 
@@ -232,7 +245,7 @@ def main():
 				new_info.parent = all_info[-1]		# Might not correspond to the node's actual parent node (due to empty nodes)
 
 			if node.move_colour():
-				new_info.colour = {gofish.BLACK: "black", gofish.WHITE: "white"}[node.move_colour()]
+				new_info.colour = {gofish.BLACK: "b", gofish.WHITE: "w"}[node.move_colour()]
 
 			all_info.append(new_info)
 
