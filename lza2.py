@@ -99,11 +99,11 @@ class Info:
 
 		for stone in self.node.get_all_values("AB"):
 			english = gofish.english_string_from_string(stone, self.node.board.boardsize)
-			hub.send_and_receive("play black {}".format(english))
+			hub.send_and_receive("play b {}".format(english))
 
 		for stone in self.node.get_all_values("AW"):
 			english = gofish.english_string_from_string(stone, self.node.board.boardsize)
-			hub.send_and_receive("play white {}".format(english))
+			hub.send_and_receive("play w {}".format(english))
 
 	def send_move(self, hub):
 
@@ -151,7 +151,7 @@ class Info:
 
 			if self.parent and self.PV:
 
-				first_colour = {"black": gofish.BLACK, "white": gofish.WHITE}[self.colour]
+				first_colour = {"b": gofish.BLACK, "w": gofish.WHITE}[self.colour]
 				made_first = False
 
 				var_node = self.parent.node
@@ -166,7 +166,7 @@ class Info:
 	def analyze(self, hub):
 
 		if self.colour not in ["b", "w"]:
-			raise ValueError
+			return
 
 		s = hub.analyze(self.colour)
 
@@ -201,11 +201,25 @@ class Info:
 			try:
 				i = fields.index("winrate")
 				wr = int(fields[i + 1]) / 100
+				if self.colour == "w":
+					wr = 100 - wr
+				self.score_before_move = wr
+			except:
+				pass
+
+			try:
+				i = fields.index("pv")
+				pv = []
+				for mv in fields[i + 1:]:
+					point = gofish.point_from_english_string(mv, self.node.board.boardsize)
+					if point is None:
+						break
+					pv.append(point)
+				self.PV = pv
 			except:
 				pass
 
 			break
-
 
 
 def main():
@@ -259,10 +273,12 @@ def main():
 
 	for info in all_info:
 
-		# Send any handicap stones etc...
-
 		info.send_AB_AW(hub)
 		info.analyze(hub)
+
+		if info.parent:
+			info.parent.score_after_move = info.score_before_move
+
 		info.send_move(hub)
 
 		if info.parent:
@@ -271,6 +287,8 @@ def main():
 		if time.monotonic() - save_time > 10:
 			root.save(sys.argv[1] + ".lza.sgf")
 			save_time = time.monotonic()
+
+	root.save(sys.argv[1] + ".lza.sgf")
 
 
 # -------------
