@@ -30,7 +30,7 @@ class Progress:
 		print("Progress: 100%")
 
 
-class Hub:
+class Connection:
 
 	def __init__(self, cmd):
 		self.n = 0
@@ -121,21 +121,21 @@ class Info:
 		self.score_after_move = None
 		self.parent = None				# Info object of previous position
 
-	def send_AB_AW(self, hub):
+	def send_AB_AW(self, conn):
 
 		for stone in self.node.get_all_values("AB"):
 			english = gofish.english_string_from_string(stone, self.node.board.boardsize)
-			hub.send_and_receive("play b {}".format(english))
+			conn.send_and_receive("play b {}".format(english))
 
 		for stone in self.node.get_all_values("AW"):
 			english = gofish.english_string_from_string(stone, self.node.board.boardsize)
-			hub.send_and_receive("play w {}".format(english))
+			conn.send_and_receive("play w {}".format(english))
 
-	def send_move(self, hub):
+	def send_move(self, conn):
 
 		if self.node.move_coords():
 			english_actual = gofish.english_string_from_point(*self.node.move_coords(), self.node.board.boardsize)
-			hub.send_and_receive("play {} {}".format(self.colour, english_actual))
+			conn.send_and_receive("play {} {}".format(self.colour, english_actual))
 
 	def node_markup(self):
 
@@ -189,12 +189,12 @@ class Info:
 						var_node = var_node.try_move(*point, colour = first_colour)
 						made_first = True
 
-	def analyze(self, hub):
+	def analyze(self, conn):
 
 		if self.colour not in ["b", "w"]:
 			return
 
-		s = hub.analyze(self.colour)
+		s = conn.analyze(self.colour)
 
 		'''
 		info move D16 visits 41 winrate 4342 prior 1647 lcb 4291 order 0 pv D16 Q4 Q16 D4 R6 R14 C6 C14 F3 F4 info move D4 visits
@@ -264,8 +264,8 @@ def main():
 	cmd = '"{}" {} -w "{}"'.format(config["engine"], extras, os.path.join(config["network_dir"], config["network"]))
 
 	print("Starting Leela Zero...")
-	hub = Hub(cmd)
-	hub.send_and_receive("name")			# Ensure we can communicate.
+	conn = Connection(cmd)
+	conn.send_and_receive("name")			# Ensure we can communicate.
 	print("Working.")
 
 	root = gofish.load(sys.argv[1])
@@ -303,13 +303,13 @@ def main():
 
 	for n, info in enumerate(all_info):
 
-		info.send_AB_AW(hub)
-		info.analyze(hub)
+		info.send_AB_AW(conn)
+		info.analyze(conn)
 
 		if info.parent:
 			info.parent.score_after_move = info.score_before_move
 
-		info.send_move(hub)
+		info.send_move(conn)
 
 		if info.parent:
 			info.parent.node_markup()
