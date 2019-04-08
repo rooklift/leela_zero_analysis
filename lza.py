@@ -264,7 +264,7 @@ def main():
 	with open(configfile) as cfg:
 		config = json.load(cfg)
 
-	cmd = "\"{}\" {} -w \"{}\"".format(config["engine"], extras, os.path.join(config["network_dir"], config["network"]))
+	cmd = '"{}" {} -w "{}"'.format(config["engine"], extras, os.path.join(config["network_dir"], config["network"]))
 
 	print("Starting Leela Zero...")
 	hub = Hub(cmd)
