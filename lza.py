@@ -139,8 +139,6 @@ class Info:
 
 	def node_markup(self):
 
-		global config
-
 		node = self.node
 
 		if self.score_after_move != None:
