@@ -8,6 +8,7 @@ class Hub:
 
 	def __init__(self, cmd):
 		self.n = 0
+		self.in_id = None		# Last incoming message ID seen (e.g. when the engine sends "=7" or whatnot)
 		self.process = subprocess.Popen(cmd, shell = False, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.DEVNULL)
 		# Note that the stderr needs to be consumed somehow, hence the DEVNULL here.
 
@@ -25,6 +26,8 @@ class Hub:
 
 	def _receive(self):
 		z = self.process.stdout.readline().decode("utf-8").strip()
+		if len(z) > 0 and z[0] == "=":
+			self.in_id = int(z[1:].split()[0])
 		print(z)
 		return z
 
@@ -42,15 +45,11 @@ class Hub:
 		# Receive the response, ignoring any lines with a different ID.
 
 		s = ""
-		in_id = -1
 
 		while 1:
 			z = self._receive()
 
-			if len(z) > 0 and z[0] == "=":
-				in_id = int(z[1:].split()[0])
-
-			if in_id == out_id:
+			if self.in_id == out_id:
 				if z.strip() != "":
 					s += z + "\n"
 				else:
@@ -63,16 +62,12 @@ class Hub:
 
 		self._send(msg)
 
-		in_id = -1
 		start_time = time.monotonic()
 
 		while time.monotonic() - start_time < config["seconds"]:
 			z = self._receive()
 
-			if z[0] == "=":
-				in_id = int(z[1:].split()[0])
-
-			if in_id == out_id:
+			if self.in_id == out_id:
 				if "info" in z:
 					pass
 
