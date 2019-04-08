@@ -1,3 +1,5 @@
+# As of April 2019, expects Leela Zero 0.17 or higher.
+
 import gofish, json, os, subprocess, sys, threading, time
 
 extras = "--gtp --noponder --resignpct 0 --threads 1"
