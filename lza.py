@@ -10,7 +10,6 @@ config = None
 class Progress:
 
 	def __init__(self, units):
-
 		self.units = units
 		self.length = 0
 
@@ -19,18 +18,14 @@ class Progress:
 			print("\b", end = "")
 
 	def update(self, units_done):
-
 		self.erase()
-
 		pc = int((units_done / self.units) * 100)
 		msg = "Progress: {}%".format(pc)
 		self.length = len(msg)
-
 		print(msg, end = "")
 		sys.stdout.flush()
 
 	def finish(self):
-
 		self.erase()
 		print("Progress: 100%")
 
@@ -212,8 +207,8 @@ class Info:
 
 		moves = s.split("info")
 
-		moves = list(map(lambda s : s.strip(), moves))
-		moves = list(filter(lambda s : len(s) > 0, moves))
+		moves = [s.strip() for s in moves]
+		moves = [s for s in moves if len(s) > 0]
 
 		for move in moves:
 
