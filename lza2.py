@@ -12,7 +12,7 @@ class Hub:
 		self.process = subprocess.Popen(cmd, shell = False, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.DEVNULL)
 		# Note that the stderr needs to be consumed somehow, hence the DEVNULL here.
 
-	def next_qid(self):
+	def _next_qid(self):
 		self.n += 1
 		return self.n
 
@@ -35,7 +35,7 @@ class Hub:
 
 		# Add a unique ID number to the start...
 
-		out_id = self.next_qid()
+		out_id = self._next_qid()
 		msg = "{} {}".format(out_id, msg)
 
 		# Send...
@@ -55,26 +55,27 @@ class Hub:
 				else:
 					return s			# Blank line always means end of output (I think).
 
-	def new_analyze(self):
+	def analyze(self):
 
-		out_id = self.next_qid()
-		msg = "{} {}".format(out_id, "lz-analyze 100")
+		out_id = self._next_qid()
+		msg = "{} {}".format(out_id, "lz-analyze 50")
 
 		self._send(msg)
 
 		start_time = time.monotonic()
+
+		s = ""							# The string to return.
 
 		while time.monotonic() - start_time < config["seconds"]:
 			z = self._receive()
 
 			if self.in_id == out_id:
 				if "info" in z:
-					pass
+					s = z
 
 		self.send_and_receive("name")
 
-
-
+		return s.strip()
 
 
 class Info:
@@ -82,7 +83,7 @@ class Info:
 	# We'll store moves as either None or [x,y]
 
 	def __init__(self, node):
-		self.node = node
+		self.node = node				# gofish node
 		self.colour = None
 		self.best_move = None
 		self.PV = None					# PV alternative to the actual move, if any
@@ -105,6 +106,93 @@ class Info:
 		if self.node.move_coords():
 			english_actual = gofish.english_string_from_point(*self.node.move_coords(), self.node.board.boardsize)
 			hub.send_and_receive("play {} {}".format(self.colour, english_actual))
+
+	def node_markup(self):
+
+		global config
+
+		node = self.node
+
+		if self.score_after_move != None:
+			score_string = "{0:.2f}%".format(self.score_after_move)
+		else:
+			score_string = "??"
+
+		if self.score_after_move != None and self.score_before_move != None:
+			if self.best_move != node.move_coords():
+				delta_string = "{0:.2f}%".format(self.score_after_move - self.score_before_move)
+			else:
+				delta_string = "( {0:.2f}% )".format(self.score_after_move - self.score_before_move)
+		else:
+			delta_string = "??"
+
+		if self.best_move != node.move_coords() and self.best_move:
+			prefer_string = "LZ prefers {}".format(gofish.english_string_from_point(*self.best_move, node.board.boardsize))
+		else:
+			prefer_string = ""
+
+		full_string = "{}\nDelta: {}\n{}".format(score_string, delta_string, prefer_string).strip()
+
+		node.add_to_comment_top(full_string)
+
+		if self.score_after_move != None and self.score_before_move != None:
+			if abs(self.score_after_move - self.score_before_move) > config["hotspot_threshold"]:
+				node.set_value("HO", 1)
+
+		if self.best_move:
+			sgf_point = gofish.string_from_point(*self.best_move)
+			node.add_value("TR", sgf_point)
+
+		if self.best_move != node.move_coords():
+
+			if self.parent and self.PV:
+
+				first_colour = {"black": gofish.BLACK, "white": gofish.WHITE}[self.colour]
+				made_first = False
+
+				var_node = self.parent.node
+
+				for point in self.PV:
+					if made_first:
+						var_node = var_node.try_move(*point)
+					else:
+						var_node = var_node.try_move(*point, colour = first_colour)
+						made_first = True
+
+	def analyze(self, hub):
+
+		s = hub.analyze()
+
+		'''
+		info move D16 visits 41 winrate 4342 prior 1647 lcb 4291 order 0 pv D16 Q4 Q16 D4 R6 R14 C6 C14 F3 F4 info move D4 visits
+		40 winrate 4341 prior 1637 lcb 4289 order 1 pv D4 Q16 Q4 D16 R14 R6 C14 C6 F17 F16 info move Q16 visits 40 winrate 4341
+		prior 1626 lcb 4289 order 2 pv Q16 D4 D16 Q4 R6 R14 C6 C14 F3 F4
+		'''
+
+		if "info" not in s:
+			return
+
+		moves = s.split("info")
+
+		moves = list(map(lambda s : s.strip(), moves))
+		moves = list(filter(lambda s : len(s) > 0, moves))
+
+		for move in moves:
+
+			if "order 0" not in move:
+				continue
+
+			'''info move D16 visits 41 winrate 4342 prior 1647 lcb 4291 order 0 pv D16 Q4 Q16 D4 R6 R14 C6 C14 F3 F4'''
+
+			fields = move.split()
+			try:
+				i = fields.index("move")
+				self.best_move = gofish.point_from_english_string(fields[i + 1], self.node.board.boardsize)
+			except:
+				continue
+
+			break
+
 
 
 def main():
@@ -154,15 +242,22 @@ def main():
 
 	# Main loop...
 
+	save_time = time.monotonic()
+
 	for info in all_info:
 
 		# Send any handicap stones etc...
 
 		info.send_AB_AW(hub)
-
-		hub.new_analyze()
-
+		info.analyze(hub)
 		info.send_move(hub)
+
+		if info.parent:
+			info.parent.node_markup()
+
+		if time.monotonic() - save_time > 10:
+			root.save(sys.argv[1] + ".lza.sgf")
+			save_time = time.monotonic()
 
 
 # -------------
