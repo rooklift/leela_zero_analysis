@@ -4,6 +4,35 @@ extras = "--gtp --noponder --resignpct 0 --threads 1"
 
 config = None
 
+
+class Progress:
+
+	def __init__(self, units):
+
+		self.units = units
+		self.length = 0
+
+	def erase(self):
+		for n in range(self.length):
+			print("\b", end = "")
+
+	def update(self, units_done):
+
+		self.erase()
+
+		pc = int((units_done / self.units) * 100)
+		msg = "Progress: {}%".format(pc)
+		self.length = len(msg)
+
+		print(msg, end = "")
+		sys.stdout.flush()
+
+	def finish(self):
+
+		self.erase()
+		print("Progress: 100%")
+
+
 class Hub:
 
 	def __init__(self, cmd):
@@ -18,7 +47,7 @@ class Hub:
 
 	def _send(self, msg):
 		msg = msg.strip()
-		print(msg)								# Debugging.
+		# print(msg)
 		msg = bytes(msg, encoding = "ascii")
 		self.process.stdin.write(msg)
 		self.process.stdin.write(b"\n")
@@ -28,7 +57,7 @@ class Hub:
 		z = self.process.stdout.readline().decode("utf-8").strip()
 		if len(z) > 0 and z[0] == "=":
 			self.in_id = int(z[1:].split()[0])
-		print(z)
+		# print(z)
 		return z
 
 	def send_and_receive(self, msg):
@@ -236,9 +265,11 @@ def main():
 		config = json.load(cfg)
 
 	cmd = "\"{}\" {} -w \"{}\"".format(config["engine"], extras, os.path.join(config["network_dir"], config["network"]))
-	hub = Hub(cmd)
 
+	print("Starting Leela Zero...")
+	hub = Hub(cmd)
 	hub.send_and_receive("name")			# Ensure we can communicate.
+	print("Working.")
 
 	root = gofish.load(sys.argv[1])
 
@@ -270,8 +301,10 @@ def main():
 	# Main loop...
 
 	save_time = time.monotonic()
+	progress = Progress(len(all_info))
+	progress.update(0)
 
-	for info in all_info:
+	for n, info in enumerate(all_info):
 
 		info.send_AB_AW(hub)
 		info.analyze(hub)
@@ -288,7 +321,10 @@ def main():
 			root.save(sys.argv[1] + ".lza.sgf")
 			save_time = time.monotonic()
 
+		progress.update(n)
+
 	root.save(sys.argv[1] + ".lza.sgf")
+	progress.finish()
 
 
 # -------------
