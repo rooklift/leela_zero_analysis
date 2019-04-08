@@ -3,5 +3,5 @@
 	"network_dir": "C:\\Programs (self-installed)\\Leela Zero\\networks",
 	"network": "00ff08ebcdc92a2554aaae815fbf5d91e8d76b9edfe82c9999427806e30eae77",
 	"hotspot_threshold": 5,
-	"seconds": 5
+	"seconds": 10
 }
