@@ -119,6 +119,7 @@ class Info:
 		self.PV = None					# PV alternative to the actual move, if any
 		self.score_before_move = None
 		self.score_after_move = None
+		self.visits = None
 		self.parent = None				# Info object of previous position
 
 	def send_AB_AW(self, conn):
@@ -159,7 +160,12 @@ class Info:
 		else:
 			prefer_string = ""
 
-		full_string = "{}\nDelta: {}\n{}".format(score_string, delta_string, prefer_string).strip()
+		if self.visits:
+			visits_string = "Visits: {}".format(self.visits)
+		else:
+			visits_string = ""
+
+		full_string = "{}\nDelta: {}\n{}\n\n{}".format(score_string, delta_string, prefer_string, visits_string).strip()
 
 		node.add_to_comment_top(full_string)
 
@@ -194,13 +200,13 @@ class Info:
 
 		s = conn.get_lz_analysis_string(self.colour)
 
-		self.best_move, self.score_before_move, self.PV = parse_analysis(s, self.colour, self.node.board.boardsize)
+		self.best_move, self.score_before_move, self.visits, self.PV = parse_analysis(s, self.colour, self.node.board.boardsize)
 
 
 
-def parse_analysis(s, colour, boardsize):			# Returns best_move, score_before_move, PV list
+def parse_analysis(s, colour, boardsize):
 
-	best_move, score_before_move, PV = None, None, None
+	best_move, score_before_move, visits, PV = None, None, None, None
 
 	'''
 	info move D16 visits 41 winrate 4342 prior 1647 lcb 4291 order 0 pv D16 Q4 Q16 D4 R6 R14 C6 C14 F3 F4 info move D4 visits
@@ -209,7 +215,7 @@ def parse_analysis(s, colour, boardsize):			# Returns best_move, score_before_mo
 	'''
 
 	if "info" not in s:
-		return best_move, score_before_move, PV
+		return best_move, score_before_move, visits, PV
 
 	moves = s.split("info")
 	moves = [s.strip() for s in moves]
@@ -239,6 +245,12 @@ def parse_analysis(s, colour, boardsize):			# Returns best_move, score_before_mo
 			pass
 
 		try:
+			i = fields.index("visits")
+			visits = int(fields[i + 1])
+		except:
+			pass
+
+		try:
 			i = fields.index("pv")
 			pv = []
 			for mv in fields[i + 1:]:
@@ -252,7 +264,7 @@ def parse_analysis(s, colour, boardsize):			# Returns best_move, score_before_mo
 
 		break
 
-	return best_move, score_before_move, PV
+	return best_move, score_before_move, visits, PV
 
 
 def main():
@@ -331,7 +343,7 @@ def main():
 
 	colour = "w" if info.colour == "b" else "b"
 	s = conn.get_lz_analysis_string(colour)
-	_, info.score_after_move, _ = parse_analysis(s, colour, info.node.board.boardsize)
+	_, info.score_after_move, _, _ = parse_analysis(s, colour, info.node.board.boardsize)
 	info.node_markup()
 
 	# Save and finish.
