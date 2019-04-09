@@ -81,13 +81,13 @@ class Connection:
 				else:
 					return s			# Blank line always means end of output (I think).
 
-	def analyze(self, colour_char):
+	def get_lz_analysis_string(self, colour):
 
-		# colour_char is "b" or "w".
+		# colour is "b" or "w".
 		# We return the last info line sent by LZ.
 
 		out_id = self._next_qid()
-		msg = "{} lz-analyze {} interval 50".format(out_id, colour_char)
+		msg = "{} lz-analyze {} interval 50".format(out_id, colour)
 
 		self._send(msg)
 
@@ -192,58 +192,67 @@ class Info:
 		if self.colour not in ["b", "w"]:
 			return
 
-		s = conn.analyze(self.colour)
+		s = conn.get_lz_analysis_string(self.colour)
 
-		'''
-		info move D16 visits 41 winrate 4342 prior 1647 lcb 4291 order 0 pv D16 Q4 Q16 D4 R6 R14 C6 C14 F3 F4 info move D4 visits
-		40 winrate 4341 prior 1637 lcb 4289 order 1 pv D4 Q16 Q4 D16 R14 R6 C14 C6 F17 F16 info move Q16 visits 40 winrate 4341
-		prior 1626 lcb 4289 order 2 pv Q16 D4 D16 Q4 R6 R14 C6 C14 F3 F4
-		'''
+		self.best_move, self.score_before_move, self.PV = parse_analysis(s, self.colour, self.node.board.boardsize)
 
-		if "info" not in s:
-			return
 
-		moves = s.split("info")
 
-		moves = [s.strip() for s in moves]
-		moves = [s for s in moves if len(s) > 0]
+def parse_analysis(s, colour, boardsize):			# Returns best_move, score_before_move, PV list
 
-		for move in moves:
+	best_move, score_before_move, PV = None, None, None
 
-			if "order 0" not in move:
-				continue
+	'''
+	info move D16 visits 41 winrate 4342 prior 1647 lcb 4291 order 0 pv D16 Q4 Q16 D4 R6 R14 C6 C14 F3 F4 info move D4 visits
+	40 winrate 4341 prior 1637 lcb 4289 order 1 pv D4 Q16 Q4 D16 R14 R6 C14 C6 F17 F16 info move Q16 visits 40 winrate 4341
+	prior 1626 lcb 4289 order 2 pv Q16 D4 D16 Q4 R6 R14 C6 C14 F3 F4
+	'''
 
-			'''info move D16 visits 41 winrate 4342 prior 1647 lcb 4291 order 0 pv D16 Q4 Q16 D4 R6 R14 C6 C14 F3 F4'''
+	if "info" not in s:
+		return best_move, score_before_move, PV
 
-			fields = move.split()
-			try:
-				i = fields.index("move")
-				self.best_move = gofish.point_from_english_string(fields[i + 1], self.node.board.boardsize)
-			except:
-				pass
+	moves = s.split("info")
+	moves = [s.strip() for s in moves]
+	moves = [s for s in moves if len(s) > 0]
 
-			try:
-				i = fields.index("winrate")
-				wr = int(fields[i + 1]) / 100
-				if self.colour == "w":
-					wr = 100 - wr
-				self.score_before_move = wr
-			except:
-				pass
+	for move in moves:
 
-			try:
-				i = fields.index("pv")
-				pv = []
-				for mv in fields[i + 1:]:
-					point = gofish.point_from_english_string(mv, self.node.board.boardsize)
-					if point is None:
-						break
-					pv.append(point)
-				self.PV = pv
-			except:
-				pass
+		if "order 0" not in move:
+			continue
 
-			break
+		'''info move D16 visits 41 winrate 4342 prior 1647 lcb 4291 order 0 pv D16 Q4 Q16 D4 R6 R14 C6 C14 F3 F4'''
+
+		fields = move.split()
+		try:
+			i = fields.index("move")
+			best_move = gofish.point_from_english_string(fields[i + 1], boardsize)
+		except:
+			pass
+
+		try:
+			i = fields.index("winrate")
+			wr = int(fields[i + 1]) / 100
+			if colour == "w":
+				wr = 100 - wr
+			score_before_move = wr
+		except:
+			pass
+
+		try:
+			i = fields.index("pv")
+			pv = []
+			for mv in fields[i + 1:]:
+				point = gofish.point_from_english_string(mv, boardsize)
+				if point is None:
+					break
+				pv.append(point)
+			PV = pv
+		except:
+			pass
+
+		break
+
+	return best_move, score_before_move, PV
 
 
 def main():
@@ -317,6 +326,15 @@ def main():
 			save_time = time.monotonic()
 
 		progress.update(n)
+
+	# The final node needs its score_after_move before it can be marked up...
+
+	colour = "w" if info.colour == "b" else "b"
+	s = conn.get_lz_analysis_string(colour)
+	_, info.score_after_move, _ = parse_analysis(s, colour, info.node.board.boardsize)
+	info.node_markup()
+
+	# Save and finish.
 
 	root.save(sys.argv[1] + ".lza.sgf")
 	progress.finish()
