@@ -4,6 +4,8 @@ import sys, time
 import gofish
 import matplotlib.pyplot as plt
 
+plt.style.use("dark_background")
+
 node = gofish.load(sys.argv[1])
 
 data = []
