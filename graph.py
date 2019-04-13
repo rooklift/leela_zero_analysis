@@ -7,30 +7,30 @@ import matplotlib.pyplot as plt
 plt.style.use("dark_background")
 
 node = gofish.load(sys.argv[1])
-
-data = []
+winrates = []
 
 while 1:
 	comment = node.get_value("C")
-	if comment is not None:
-		if "%" in comment:
-			i = comment.index("%")
-			pc = comment[:i]
-			data.append(float(pc))
+	try:
+		i = comment.index("%")
+		pc = comment[:i]
+		winrates.append(float(pc))
+	except:
+		winrates.append(None)
 	node = node.main_child()
 	if node == None:
 		break
 
-if len(data) < 2:
-	print("No data")
+if len(winrates) < 2:
+	print(s)
 	time.sleep(0.5)
 	sys.exit()
 
 _, ax = plt.subplots()
 ax.spines["right"].set_visible(False)
 ax.spines["top"].set_visible(False)
-plt.xlim([0, len(data)])
+plt.xlim([0, len(winrates)])
 plt.ylim([0, 100])
 plt.ylabel("Black WR")
-plt.plot(data)
+plt.plot(winrates)
 plt.show()
