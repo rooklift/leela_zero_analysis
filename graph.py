@@ -4,19 +4,27 @@ import sys, time
 import gofish
 import matplotlib.pyplot as plt
 
-plt.style.use("dark_background")
-
 node = gofish.load(sys.argv[1])
 winrates = []
 
 while 1:
-	comment = node.get_value("C")
-	try:
-		i = comment.index("%")
-		pc = comment[:i]
-		winrates.append(float(pc))
-	except:
+
+	got_wr_in_node = False
+
+	for key in ["BWR", "BWWR", "C"]:
+		val = node.get_value(key)
+		try:
+			i = val.index("%")
+			pc = val[:i]
+			winrates.append(float(pc))
+			got_wr_in_node = True
+			break
+		except:
+			continue
+
+	if not got_wr_in_node:
 		winrates.append(None)
+
 	node = node.main_child()
 	if node == None:
 		break
@@ -26,6 +34,7 @@ if len(winrates) < 2:
 	time.sleep(0.5)
 	sys.exit()
 
+plt.style.use("dark_background")
 _, ax = plt.subplots()
 ax.spines["right"].set_visible(False)
 ax.spines["top"].set_visible(False)
