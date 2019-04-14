@@ -10,7 +10,7 @@ winrates = []
 while 1:
 	val = node.get_value("SBKV")
 	try:
-		winrates.append(float(val))
+		winrates.append(100 - float(val))		# Use white winrate for consistency with Sabaki
 	except:
 		winrates.append(None)
 
@@ -30,6 +30,6 @@ ax.spines["top"].set_visible(False)
 plt.xlim([0, len(winrates)])
 plt.ylim([0, 100])
 plt.yticks([0,25,50,75,100])
-plt.ylabel("Black WR")
+plt.ylabel("White WR")
 plt.plot(winrates)
 plt.show()
