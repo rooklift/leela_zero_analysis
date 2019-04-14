@@ -287,6 +287,7 @@ def main():
 	print("Working.")
 
 	root = gofish.load(sys.argv[1])
+	root.set_value("AP", "github.com/fohristiwhirl/leela_zero_analysis")
 
 	# Make a list of Info objects...
 
