@@ -207,7 +207,8 @@ class Info:
 		node = self.node
 
 		if self.score_after_move != None:
-			score_string = "{0:.2f}%".format(self.score_after_move)
+			score_string = "{0:.2f}%".format(self.score_after_move)				# With % sign
+			node.set_value("SBKV", "{0:.2f}".format(self.score_after_move))		# Without
 		else:
 			score_string = "??"
 

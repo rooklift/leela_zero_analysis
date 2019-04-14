@@ -8,21 +8,10 @@ node = gofish.load(sys.argv[1])
 winrates = []
 
 while 1:
-
-	got_wr_in_node = False
-
-	for key in ["BWR", "BWWR", "C"]:
-		val = node.get_value(key)
-		try:
-			i = val.index("%")
-			pc = val[:i]
-			winrates.append(float(pc))
-			got_wr_in_node = True
-			break
-		except:
-			continue
-
-	if not got_wr_in_node:
+	val = node.get_value("SBKV")
+	try:
+		winrates.append(float(val))
+	except:
 		winrates.append(None)
 
 	node = node.main_child()
