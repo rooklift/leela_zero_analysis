@@ -222,6 +222,8 @@ class Info:
 		if self.score_after_move != None and self.score_before_move != None:
 			if self.best_move and self.best_move != node.move_coords():
 				delta_string = "{0:.2f}%".format(self.score_after_move - self.score_before_move)
+				if abs(self.score_after_move - self.score_before_move) > config["hotspot_threshold"]:
+					node.set_value("BM", 1)
 			else:
 				delta_string = "( {0:.2f}% )".format(self.score_after_move - self.score_before_move)
 
