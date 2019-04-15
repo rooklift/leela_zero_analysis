@@ -206,58 +206,60 @@ class Info:
 
 		node = self.node
 
+		score_string = "??"
+		delta_string = "??"
+		prefer_string = ""
+		visits_string = ""
+
+		# Score
+
 		if self.score_after_move != None:
 			score_string = "{0:.2f}%".format(self.score_after_move)				# With % sign
 			node.set_value("SBKV", "{0:.2f}".format(self.score_after_move))		# Without
-		else:
-			score_string = "??"
+
+		# Delta
 
 		if self.score_after_move != None and self.score_before_move != None:
-			if self.best_move != node.move_coords():
+			if self.best_move and self.best_move != node.move_coords():
 				delta_string = "{0:.2f}%".format(self.score_after_move - self.score_before_move)
 			else:
 				delta_string = "( {0:.2f}% )".format(self.score_after_move - self.score_before_move)
-		else:
-			delta_string = "??"
 
-		if self.best_move and self.best_move != node.move_coords():
-			prefer_string = "LZ prefers {}".format(gofish.english_string_from_point(*self.best_move, node.board.boardsize))
-		else:
-			prefer_string = ""
+		# Best move
+
+		if self.best_move:
+			sgf_point = gofish.string_from_point(*self.best_move)
+			node.add_value("TR", sgf_point)
+			if self.best_move != node.move_coords():
+				prefer_string = "LZ prefers {}".format(gofish.english_string_from_point(*self.best_move, node.board.boardsize))
+
+		# Visits
 
 		if self.visits:
 			visits_string = "Visits: {}".format(self.visits)
-		else:
-			visits_string = ""
+
+		# Comment
 
 		full_string = "{}\nDelta: {}\n{}\n\n{}".format(score_string, delta_string, prefer_string, visits_string).strip()
 
 		if node.parent is not None:
 			node.add_to_comment_top(full_string)
 
-		if self.score_after_move != None and self.score_before_move != None:
-			if abs(self.score_after_move - self.score_before_move) > config["hotspot_threshold"]:
-				node.set_value("HO", 1)
+		# Variation
 
-		if self.best_move:
-			sgf_point = gofish.string_from_point(*self.best_move)
-			node.add_value("TR", sgf_point)
+		if self.best_move and self.best_move != node.move_coords() and self.parent and self.PV:
 
-		if self.best_move and self.best_move != node.move_coords():
+			first_colour = {"b": gofish.BLACK, "w": gofish.WHITE}[self.colour]
+			made_first = False
 
-			if self.parent and self.PV:
+			var_node = self.parent.node
 
-				first_colour = {"b": gofish.BLACK, "w": gofish.WHITE}[self.colour]
-				made_first = False
-
-				var_node = self.parent.node
-
-				for point in self.PV:
-					if made_first:
-						var_node = var_node.try_move(*point)
-					else:
-						var_node = var_node.try_move(*point, colour = first_colour)
-						made_first = True
+			for point in self.PV:
+				if made_first:
+					var_node = var_node.try_move(*point)
+				else:
+					var_node = var_node.try_move(*point, colour = first_colour)
+					made_first = True
 
 	def analyze(self, conn):
 
