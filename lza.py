@@ -220,7 +220,7 @@ class Info:
 		else:
 			delta_string = "??"
 
-		if self.best_move != node.move_coords() and self.best_move:
+		if self.best_move and self.best_move != node.move_coords():
 			prefer_string = "LZ prefers {}".format(gofish.english_string_from_point(*self.best_move, node.board.boardsize))
 		else:
 			prefer_string = ""
