@@ -232,7 +232,8 @@ class Info:
 
 		full_string = "{}\nDelta: {}\n{}\n\n{}".format(score_string, delta_string, prefer_string, visits_string).strip()
 
-		node.add_to_comment_top(full_string)
+		if node.parent is not None:
+			node.add_to_comment_top(full_string)
 
 		if self.score_after_move != None and self.score_before_move != None:
 			if abs(self.score_after_move - self.score_before_move) > config["hotspot_threshold"]:
@@ -242,7 +243,7 @@ class Info:
 			sgf_point = gofish.string_from_point(*self.best_move)
 			node.add_value("TR", sgf_point)
 
-		if self.best_move != node.move_coords():
+		if self.best_move and self.best_move != node.move_coords():
 
 			if self.parent and self.PV:
 
@@ -296,9 +297,9 @@ def main():
 
 	while 1:
 
-		# Totally ignore empty nodes. Everything else gets put in the list...
+		# Totally ignore empty nodes (except root). Everything else gets put in the list...
 
-		if "B" in node.properties or "W" in node.properties or "AB" in node.properties or "AW" in node.properties:
+		if node is root or "B" in node.properties or "W" in node.properties or "AB" in node.properties or "AW" in node.properties:
 
 			new_info = Info(node)
 
@@ -323,7 +324,7 @@ def main():
 	for n, info in enumerate(all_info):
 
 		info.send_AB_AW(conn)
-		info.analyze(conn)
+		info.analyze(conn)		# Note: analysis for the node is done before the node's move (B or W tag) is sent.
 
 		if info.parent:
 			info.parent.score_after_move = info.score_before_move
