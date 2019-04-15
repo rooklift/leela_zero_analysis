@@ -1,63 +1,66 @@
-(;GM[1]FF[4]CA[UTF-8]AP[github.com/fohristiwhirl/leela_zero_analysis]KM[6.5]SZ[19]DT[2018-04-02];B[pd]SBKV[43.46]C[43.46%
-Delta: 0.02%
+(;GM[1]FF[4]CA[UTF-8]AP[github.com/fohristiwhirl/leela_zero_analysis]KM[6.5]SZ[19]DT[2018-04-02]SBKV[43.49]C[43.49%
+Delta: ??](;B[pd]SBKV[43.50]C[43.50%
+Delta: 0.01%
+LZ prefers Q4
+
+Visits: 1120]TR[pp];W[dp]SBKV[43.63]C[43.63%
+Delta: ( 0.13% )
+
+
+Visits: 2728]TR[dp](;B[cq]SBKV[43.20]C[43.20%
+Delta: -0.43%
 LZ prefers D16
 
-Visits: 1197]TR[dd];W[dp]SBKV[43.66]C[43.66%
-Delta: ( 0.20% )
-
-
-Visits: 2702]TR[dp](;B[cq]SBKV[43.18]C[43.18%
-Delta: -0.48%
-LZ prefers D16
-
-Visits: 1399]TR[dd];W[dq]SBKV[43.16]C[43.16%
+Visits: 1379]TR[dd];W[dq]SBKV[43.18]C[43.18%
 Delta: ( -0.02% )
 
 
-Visits: 1198]TR[dq];B[cp]SBKV[43.17]C[43.17%
-Delta: ( 0.01% )
+Visits: 1087]TR[dq];B[cp]SBKV[43.18]C[43.18%
+Delta: ( 0.00% )
 
 
-Visits: 2026]TR[cp](;W[co]SBKV[43.74]C[43.74%
-Delta: 0.57%
+Visits: 1873]TR[cp](;W[co]SBKV[43.98]C[43.98%
+Delta: 0.80%
 LZ prefers D5
 
-Visits: 2812]TR[do];B[bo]SBKV[43.40]C[43.40%
-Delta: ( -0.34% )
+Visits: 2652]TR[do];B[bo]SBKV[43.39]C[43.39%
+Delta: ( -0.59% )
 
 
-Visits: 691]TR[bo](;W[bn]SBKV[43.83]C[43.83%
-Delta: 0.43%
+Visits: 690]TR[bo](;W[bn]SBKV[43.84]C[43.84%
+Delta: 0.45%
 LZ prefers D16
 
-Visits: 885]TR[dd];B[cn]SBKV[43.91]C[43.91%
-Delta: ( 0.08% )
+Visits: 806]TR[dd];B[cn]SBKV[43.88]C[43.88%
+Delta: ( 0.04% )
 
 
-Visits: 781]TR[cn](;W[bp]SBKV[98.49]C[98.49%
-Delta: 54.58%
+Visits: 807]TR[cn](;W[bp]SBKV[98.47]C[98.47%
+Delta: 54.59%
 LZ prefers D5
 
-Visits: 1466]HO[1]TR[do];B[do]SBKV[98.19]C[98.19%
-Delta: ( -0.30% )
+Visits: 1458]HO[1]TR[do];B[do]SBKV[98.32]C[98.32%
+Delta: ( -0.15% )
 
 
-Visits: 615]TR[do](;W[pp]SBKV[98.42]C[98.42%
-Delta: 0.23%
-LZ prefers R4
+Visits: 577]TR[do](;W[pp]SBKV[98.41]C[98.41%
+Delta: 0.09%
+LZ prefers C2
 
-Visits: 98]TR[qp];B[dd]SBKV[98.18]C[98.18%
-Delta: ( -0.24% )
+Visits: 272]TR[cr];B[dd]SBKV[98.21]C[98.21%
+Delta: ( -0.20% )
 
 
-Visits: 256]TR[dd])
-(;W[qp];B[dd];W[cr];B[bq];W[fp];B[oq];W[pn];B[lq];W[cc];B[dc];W[cd];B[cf];W[ce])
+Visits: 220]TR[dd])
+(;W[cr];B[bq];W[eo];B[en];W[fo];B[pp];W[dd];B[fn];W[go];B[cc];W[cd];B[dc];W[fc])
 )
-(;W[do];B[bm];W[bp];B[an];W[bq];B[cr];W[br];B[dd];W[pp];B[qn];W[nq];B[qf];W[cc];B[cd];W[dc];B[fc];W[ec];B[ed];W[fb];B[bc];W[bb];B[eb];W[bd])
+(;W[do];B[bm];W[bp];B[an];W[bq];B[dd];W[pp];B[qn];W[nq];B[cr];W[br];B[qp];W[qq];B[rq];W[qo];B[rp])
 )
-(;W[dd];B[pp];W[bn];B[cn];W[do];B[bm];W[bp];B[an];W[bq];B[fc];W[cf];B[nc];W[qq];B[qp];W[pq];B[nq];W[oq];B[op];W[nr];B[cr];W[br])
+(;W[dd];B[pp];W[bn];B[cn];W[do];B[bm];W[bp];B[an];W[bq];B[fc];W[cf];B[nc];W[qq];B[qp];W[pq];B[nq];W[oq];B[op];W[nr])
 )
-(;W[do];B[cn];W[co];B[bo];W[dd];B[pp];W[cr];B[cc];W[dc];B[cd];W[de];B[bf];W[qf];B[qe];W[pf];B[nd])
+(;W[do];B[cn];W[co];B[bo];W[dd];B[pp];W[cr];B[fc];W[cl];B[cf];W[fd];B[gd];W[fe];B[dc];W[cc];B[ec];W[cd];B[ci];W[dh];B[ch])
 )
-(;B[dd];W[pp];B[qn];W[qf];B[cn];W[cf];B[nq];W[np];B[mp];W[no];B[pq];W[mq];B[oq];W[lp];B[qp];W[mo];B[cq];W[cp];B[dq];W[ep];B[fr];W[fc];B[df];W[dg];B[ef];W[cd];B[cc];W[ce];B[dc];W[hc];B[di];W[eg];B[gd];W[fd])
+(;B[dd];W[pp];B[cn];W[cf];B[qn];W[qf];B[nq];W[np];B[mp];W[no];B[pq];W[mq];B[oq];W[lp];B[qp];W[mo];B[cq];W[cp];B[dq];W[ep];B[fr];W[fc];B[df];W[dg];B[ef];W[cd];B[cc];W[ce];B[dc];W[hc];B[di];W[eg];B[gd])
+)
+(;B[pp];W[dd];B[pd];W[dp];B[fc];W[nc];B[fq];W[nq];B[cn];W[dn];B[dm];W[en];B[cp];W[cm];B[co];W[dl];B[dq];W[em];B[cc];W[dc])
 )
