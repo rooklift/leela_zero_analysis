@@ -1,7 +1,7 @@
 {
 	"engine": "C:\\Programs (self-installed)\\Leela Zero\\leelaz.exe",
 	"network_dir": "C:\\Programs (self-installed)\\Leela Zero\\networks",
-	"network": "565f818232dcca1d966547410216f520620108ef7a07a37a30ee0f8f709f0b6d",
+	"network": "c9fb22c70c0d43c96102b1bb06043510eea3d4f8da1bde3ddaadafdff2a6da5d",
 	"hotspot_threshold": 5,
 	"seconds": 10
 }
