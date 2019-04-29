@@ -2,7 +2,7 @@
 
 import gofish, json, os, subprocess, sys, threading, time
 
-extras = "--gtp --noponder --resignpct 0 --threads 1"
+extras = "--gtp --noponder -v 1601 --resignpct 0 --threads 1"
 
 config = None
 
@@ -79,7 +79,7 @@ class Connection:
 				if z.strip() != "":
 					s += z + "\n"
 				else:
-					return s			# Blank line always means end of output (I think).
+					return s			# Blank line indicates end of any GTP response.
 
 	def _get_lz_analysis_string(self, colour):
 
@@ -101,6 +101,8 @@ class Connection:
 			if self.in_id == out_id:
 				if "info" in z:
 					s = z
+				if z == "":				# Blank line indicates end of any GTP response.
+					break
 
 		# For synchronization purposes...
 		self.send_and_receive("name")
