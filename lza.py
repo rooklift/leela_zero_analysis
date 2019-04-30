@@ -2,7 +2,7 @@
 
 import gofish, json, os, subprocess, sys, threading, time
 
-extras = "--gtp --noponder -v 1601 --resignpct 0 --threads 1"
+extras = "--gtp --noponder -v 1601 --resignpct 0"
 
 config = None
 
