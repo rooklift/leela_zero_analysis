@@ -1,8 +1,8 @@
+#!/usr/bin/env python3
+
 # As of April 2019, expects Leela Zero 0.17 or higher.
 
 import gofish, json, os, subprocess, sys, threading, time
-
-extras = "--gtp --noponder --resignpct 0"
 
 config = None
 
@@ -35,7 +35,7 @@ class Connection:
 	def __init__(self, cmd):
 		self.n = 0
 		self.in_id = None		# Last incoming message ID seen (e.g. when the engine sends "=7" or whatnot)
-		self.process = subprocess.Popen(cmd, shell = False, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.DEVNULL)
+		self.process = subprocess.Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.DEVNULL)
 		# Note that the stderr needs to be consumed somehow, hence the DEVNULL here.
 
 	def _next_qid(self):
@@ -287,9 +287,10 @@ def main():
 	with open(configfile) as cfg:
 		config = json.load(cfg)
 
-	cmd = '"{}" {} -w "{}"'.format(config["engine"], extras, os.path.join(config["network_dir"], config["network"]))
+	cmd = [config["engine"]] + config["extras"] + ["-w", os.path.join(config["network_dir"], config["network"])]
 
 	print("Starting Leela Zero...")
+	print(cmd)
 	conn = Connection(cmd)
 	conn.send_and_receive("name")			# Ensure we can communicate.
 	print("Working.")
