@@ -209,6 +209,9 @@ class Info:
 
 		node = self.node
 
+		if node.get_value("SBKV"):
+			return
+
 		score_string = "??"
 		delta_string = "??"
 		prefer_string = ""
@@ -332,7 +335,9 @@ def main():
 	for n, info in enumerate(all_info):
 
 		info.send_AB_AW(conn)
-		info.analyze(conn)		# Note: analysis for the node is done before the node's move (B or W tag) is sent.
+
+		if not info.node.get_value("SBKV"):
+			info.analyze(conn)		# Note: analysis for the node is done before the node's move (B or W tag) is sent.
 
 		if info.parent:
 			info.parent.score_after_move = info.score_before_move
