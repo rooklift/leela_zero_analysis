@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # This script extracts a winrate graph from an lza.py-produced SGF file.
 
 import sys, time
