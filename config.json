@@ -1,9 +1,9 @@
 {
 	"engine": "../leela-zero/build/leelaz",
 	"network_dir": "../leela-zero/build/networks",
-	"network": "f3be3bf8",
+	"network": "d42f950a",
 	"hotspot_threshold": 5,
 
-	"extras": ["--gtp", "--threads", "1", "--noponder", "--visits", "1601", "--resignpct", "0"],
-	"seconds": 60
+	"extras": ["--gtp", "--threads", "1", "--noponder", "--visits", "1601"],
+	"seconds": 120
 }
